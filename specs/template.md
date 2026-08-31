@@ -9,4 +9,5 @@ Latest official version should be used providing there is a compatibility betwee
 4. Drizzle ORM
 5. Postgresql DB in Neon cloud
 6. Better auth (with add ons) for users AUTH and multitenancy
-7. ...
+7. threejs.org as 3D and animation lib 
+8. ...
