@@ -23,6 +23,14 @@ export interface ShipPlacement {
   readonly orientation: Orientation;
 }
 
+/** A placement that has passed validation, with its occupied cells resolved. */
+export interface Ship extends ShipPlacement {
+  /** Stable within a fleet, e.g. `cruiser-0`, `cruiser-1`. */
+  readonly id: string;
+  readonly size: number;
+  readonly cells: readonly Coord[];
+}
+
 /** Spec §9: `fire_result` outcomes. */
 export type ShotOutcome = 'miss' | 'hit' | 'sunk';
 
