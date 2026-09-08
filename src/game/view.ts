@@ -220,3 +220,25 @@ export function opponentCellAt(view: PlayerView, coord: Coord): OpponentCellStat
   }
   return view.opponent.grid[coord.y]?.[coord.x] ?? 'unknown';
 }
+
+/** Every opponent cell currently in `state`, scanned in row-major order. */
+export function cellsWithState(view: PlayerView, state: OpponentCellState): Coord[] {
+  const found: Coord[] = [];
+  for (let y = 0; y < BOARD_SIZE; y += 1) {
+    for (let x = 0; x < BOARD_SIZE; x += 1) {
+      if (view.opponent.grid[y]?.[x] === state) {
+        found.push({ x, y });
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * Cells the viewer may still legally fire at, derived purely from what they can
+ * see. This is the view-only counterpart of `legalTargets(state, slot)`, and it is
+ * what a bot must use — a bot never receives a `GameState`.
+ */
+export function legalTargetsFromView(view: PlayerView): Coord[] {
+  return cellsWithState(view, 'unknown');
+}

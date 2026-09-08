@@ -32,3 +32,24 @@ export function fireAll(state: GameState, slot: PlayerSlot, coords: readonly Coo
     return result.value.state;
   }, state);
 }
+
+/**
+ * Fires a sequence for one player regardless of whose turn the rules would give
+ * it to, by handing the turn straight back after each shot.
+ *
+ * A liberty taken by the test harness only — it lets a scenario be set up shot by
+ * shot without playing the opponent. Nothing under test ever does this.
+ */
+export function fireAllForcingTurn(
+  state: GameState,
+  slot: PlayerSlot,
+  coords: readonly Coord[],
+): GameState {
+  return coords.reduce((current, coord) => {
+    const result = fire({ ...current, turn: slot }, slot, coord);
+    if (!result.ok) {
+      throw new Error(`unexpected rejection at ${coord.x},${coord.y}: ${result.error.code}`);
+    }
+    return result.value.state;
+  }, state);
+}
