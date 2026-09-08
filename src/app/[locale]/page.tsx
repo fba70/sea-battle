@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { type Locale } from '@/i18n/routing';
 
 export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -29,8 +30,8 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button size="lg" disabled>
-          {t('landing.playVsBot')}
+        <Button size="lg" asChild>
+          <Link href="/play/bot">{t('landing.playVsBot')}</Link>
         </Button>
         <Button size="lg" variant="outline" disabled>
           {t('landing.playVsFriend')}

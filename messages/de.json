@@ -17,10 +17,88 @@
     "foundationNotice": "Das Projektgerüst steht. Spielfeld und Regel-Engine folgen als Nächstes."
   },
   "game": {
+    "title": "Kampf gegen den Bot",
+    "loading": "Das Schlachtfeld wird vorbereitet…",
+    "keyboardHint": "Pfeiltasten bewegen den Cursor, Enter oder Leertaste feuert. Beim Platzieren dreht R das Schiff.",
     "yourTurn": "Du bist am Zug",
     "opponentTurn": "Gegner ist am Zug",
     "shipsRemaining": "{count, plural, =0 {Keine Schiffe übrig} one {# Schiff übrig} other {# Schiffe übrig}}",
-    "shotsFired": "{count, plural, =0 {Keine Schüsse abgegeben} one {# Schuss abgegeben} other {# Schüsse abgegeben}}"
+    "shotsFired": "{count, plural, =0 {Keine Schüsse abgegeben} one {# Schuss abgegeben} other {# Schüsse abgegeben}}",
+    "difficulty": {
+      "label": "Schwierigkeit",
+      "easy": "Leicht",
+      "medium": "Mittel",
+      "hard": "Schwer",
+      "easyHint": "Schießt zufällig. Zum lockeren Aufwärmen.",
+      "mediumHint": "Sucht im Muster und versenkt jedes getroffene Schiff.",
+      "hardHint": "Berechnet, wo deine Schiffe liegen müssen. Wirklich fordernd.",
+      "playingAgainst": "Du spielst gegen {level}"
+    },
+    "ship": {
+      "battleship": "Schlachtschiff",
+      "cruiser": "Kreuzer",
+      "destroyer": "Zerstörer",
+      "submarine": "U-Boot"
+    },
+    "board": {
+      "yourFleet": "Deine Flotte",
+      "enemyWaters": "Feindliche Gewässer",
+      "placementGrid": "Deine Flotte, platziere deine Schiffe",
+      "yourGrid": "Deine Flotte unter Beschuss",
+      "enemyGrid": "Feindliche Gewässer, wähle ein Ziel"
+    },
+    "placement": {
+      "fleetTray": "Zu platzierende Schiffe",
+      "deckCount": "{count, plural, one {# Deck} other {# Decks}}",
+      "instructions": "Zieh ein Schiff auf das Raster oder wähle eines aus und tippe auf ein Feld. Tippe ein platziertes Schiff an, um es erneut zu bewegen. Schiffe dürfen sich nicht berühren, auch nicht an den Ecken.",
+      "rotate": "Drehen (R)",
+      "autoPlace": "Automatisch platzieren",
+      "reset": "Feld leeren",
+      "start": "Gefecht starten",
+      "incomplete": "Platziere alle zehn Schiffe"
+    },
+    "status": {
+      "placement": "Stelle deine Flotte auf, um zu beginnen",
+      "yours": "Du bist am Zug — gib einen Schuss ab",
+      "opponent": "Der Gegner zielt…",
+      "won": "Sieg! Feindliche Flotte vernichtet",
+      "lost": "Niederlage — deine Flotte ist verloren"
+    },
+    "result": {
+      "wonBody": "Du hast jedes feindliche Schiff versenkt. Noch eine Runde?",
+      "lostBody": "Der Bot hat deine Flotte zuerst versenkt. Nochmal versuchen?"
+    },
+    "action": {
+      "playAgain": "Nochmal spielen",
+      "backHome": "Zurück zum Start"
+    },
+    "stats": {
+      "enemyShips": "Feindliche Schiffe übrig",
+      "yourShips": "Deine Schiffe übrig",
+      "shotsFired": "Abgegebene Schüsse",
+      "hits": "Treffer"
+    },
+    "log": {
+      "title": "Letzte Schüsse",
+      "empty": "Noch keine Schüsse abgegeben.",
+      "human": "Du",
+      "bot": "Bot",
+      "hit": "Treffer",
+      "miss": "Wasser",
+      "sunk": "{ship} versenkt"
+    },
+    "cell": {
+      "state": "{cell}, {state}",
+      "fireAt": "{cell}, {state}. Hier feuern.",
+      "unknown": "unerkundet",
+      "water": "Wasser",
+      "empty": "leeres Wasser",
+      "ship": "dein Schiff",
+      "hit": "Treffer",
+      "sunk": "versenkt",
+      "miss": "Wasser",
+      "knownEmpty": "sicher leer"
+    }
   },
   "locale": {
     "label": "Sprache",

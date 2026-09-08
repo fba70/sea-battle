@@ -17,10 +17,88 @@
     "foundationNotice": "Project foundation is in place. The board and rules engine land next."
   },
   "game": {
+    "title": "Battle against the bot",
+    "loading": "Preparing the battlefield…",
+    "keyboardHint": "Arrow keys move the cursor, Enter or Space fires. Press R while placing to rotate.",
     "yourTurn": "Your turn",
     "opponentTurn": "Opponent's turn",
     "shipsRemaining": "{count, plural, =0 {No ships remaining} one {# ship remaining} other {# ships remaining}}",
-    "shotsFired": "{count, plural, =0 {No shots fired} one {# shot fired} other {# shots fired}}"
+    "shotsFired": "{count, plural, =0 {No shots fired} one {# shot fired} other {# shots fired}}",
+    "difficulty": {
+      "label": "Bot difficulty",
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "easyHint": "Fires at random. A gentle warm-up.",
+      "mediumHint": "Hunts in a pattern and finishes off any ship it wounds.",
+      "hardHint": "Works out where your ships must be. Genuinely tough.",
+      "playingAgainst": "Playing against {level}"
+    },
+    "ship": {
+      "battleship": "Battleship",
+      "cruiser": "Cruiser",
+      "destroyer": "Destroyer",
+      "submarine": "Submarine"
+    },
+    "board": {
+      "yourFleet": "Your fleet",
+      "enemyWaters": "Enemy waters",
+      "placementGrid": "Your fleet, place your ships",
+      "yourGrid": "Your fleet under fire",
+      "enemyGrid": "Enemy waters, choose a target"
+    },
+    "placement": {
+      "fleetTray": "Ships to place",
+      "deckCount": "{count, plural, one {# deck} other {# decks}}",
+      "instructions": "Drag a ship onto the grid, or pick one and tap a square. Tap a placed ship to move it again. Ships may not touch, not even at the corners.",
+      "rotate": "Rotate (R)",
+      "autoPlace": "Auto-place",
+      "reset": "Clear board",
+      "start": "Start the battle",
+      "incomplete": "Place all ten ships"
+    },
+    "status": {
+      "placement": "Position your fleet to begin",
+      "yours": "Your turn — take a shot",
+      "opponent": "Opponent is taking aim…",
+      "won": "Victory! Enemy fleet destroyed",
+      "lost": "Defeated — your fleet is lost"
+    },
+    "result": {
+      "wonBody": "You sank every enemy ship. Another round?",
+      "lostBody": "The bot sank your fleet first. Try again?"
+    },
+    "action": {
+      "playAgain": "Play again",
+      "backHome": "Back to start"
+    },
+    "stats": {
+      "enemyShips": "Enemy ships left",
+      "yourShips": "Your ships left",
+      "shotsFired": "Shots fired",
+      "hits": "Hits"
+    },
+    "log": {
+      "title": "Recent shots",
+      "empty": "No shots fired yet.",
+      "human": "You",
+      "bot": "Bot",
+      "hit": "Hit",
+      "miss": "Miss",
+      "sunk": "Sank the {ship}"
+    },
+    "cell": {
+      "state": "{cell}, {state}",
+      "fireAt": "{cell}, {state}. Fire here.",
+      "unknown": "unexplored",
+      "water": "water",
+      "empty": "empty water",
+      "ship": "your ship",
+      "hit": "hit",
+      "sunk": "sunk",
+      "miss": "miss",
+      "knownEmpty": "known empty"
+    }
   },
   "locale": {
     "label": "Language",

@@ -53,15 +53,15 @@ function shipIdFor(shipClass: ShipClass, ordinal: number): string {
 }
 
 /**
- * Validates a proposed fleet against the full spec §4 ruleset:
- * exact fleet composition, straight horizontal/vertical ships, fully on-board,
- * no overlap, and no touching — diagonals included.
+ * Shared implementation for full and partial fleet validation.
  *
- * The client's placement UI produces a *proposal*; this is the re-validation the
- * trust model (spec §5.3) requires before it is ever accepted.
+ * `requireFullFleet` is the only difference: a partially-built fleet is checked
+ * for geometry (bounds, overlap, touching) but not for composition, which is what
+ * the placement UI needs while the player is still positioning ships.
  */
-export function validateFleet(
+function validatePlacements(
   placements: readonly ShipPlacement[],
+  requireFullFleet: boolean,
 ): Result<readonly Ship[], PlacementError> {
   const counts = new Map<ShipClass, number>();
 
@@ -161,7 +161,11 @@ export function validateFleet(
 
   for (const entry of FLEET) {
     const actual = counts.get(entry.shipClass) ?? 0;
-    if (actual !== REQUIRED_COUNTS[entry.shipClass]) {
+    const required = REQUIRED_COUNTS[entry.shipClass];
+
+    // A partial fleet may be short of ships, but never over-supplied.
+    const wrong = requireFullFleet ? actual !== required : actual > required;
+    if (wrong) {
       return err({
         code: 'wrong_fleet_composition',
         message: `Fleet must contain exactly ${entry.count} x ${entry.shipClass}, got ${actual}`,
@@ -170,6 +174,58 @@ export function validateFleet(
   }
 
   return ok(ships);
+}
+
+/**
+ * Validates a proposed fleet against the full spec §4 ruleset:
+ * exact fleet composition, straight horizontal/vertical ships, fully on-board,
+ * no overlap, and no touching — diagonals included.
+ *
+ * The client's placement UI produces a *proposal*; this is the re-validation the
+ * trust model (spec §5.3) requires before it is ever accepted.
+ */
+export function validateFleet(
+  placements: readonly ShipPlacement[],
+): Result<readonly Ship[], PlacementError> {
+  return validatePlacements(placements, true);
+}
+
+/**
+ * Geometry-only validation for a fleet that is still being built: every rule
+ * except "all ten ships are present". Used for live feedback during placement.
+ */
+export function validatePartialFleet(
+  placements: readonly ShipPlacement[],
+): Result<readonly Ship[], PlacementError> {
+  return validatePlacements(placements, false);
+}
+
+/**
+ * Whether `candidate` can join an already-valid set of placements. Returns the
+ * blocking error, or null when the placement is legal.
+ */
+export function canPlaceShip(
+  existing: readonly ShipPlacement[],
+  candidate: ShipPlacement,
+): PlacementError | null {
+  const result = validatePartialFleet([...existing, candidate]);
+  return result.ok ? null : result.error;
+}
+
+/** How many ships of each class are still waiting to be placed. */
+export function remainingFleetCounts(placements: readonly ShipPlacement[]): Map<ShipClass, number> {
+  const remaining = new Map<ShipClass, number>(
+    FLEET.map((entry) => [entry.shipClass, entry.count]),
+  );
+
+  for (const placement of placements) {
+    const left = remaining.get(placement.shipClass);
+    if (left !== undefined) {
+      remaining.set(placement.shipClass, Math.max(0, left - 1));
+    }
+  }
+
+  return remaining;
 }
 
 export function isFleetValid(placements: readonly ShipPlacement[]): boolean {
