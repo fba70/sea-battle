@@ -1,0 +1,29 @@
+{
+  "app": {
+    "name": "SeaDuel",
+    "tagline": "Modernes Schiffe versenken. Ohne Anmeldung, ohne Werbung, ohne Bezahlschranke."
+  },
+  "nav": {
+    "play": "Spielen",
+    "howToPlay": "Spielanleitung",
+    "faq": "Häufige Fragen",
+    "support": "Projekt unterstützen"
+  },
+  "landing": {
+    "title": "Versenke die Flotte.",
+    "subtitle": "Gib deinen ersten Schuss in Sekunden ab — ganz ohne Konto.",
+    "playVsBot": "Gegen den Bot spielen",
+    "playVsFriend": "Gegen Freunde spielen",
+    "foundationNotice": "Das Projektgerüst steht. Spielfeld und Regel-Engine folgen als Nächstes."
+  },
+  "game": {
+    "yourTurn": "Du bist am Zug",
+    "opponentTurn": "Gegner ist am Zug",
+    "shipsRemaining": "{count, plural, =0 {Keine Schiffe übrig} one {# Schiff übrig} other {# Schiffe übrig}}",
+    "shotsFired": "{count, plural, =0 {Keine Schüsse abgegeben} one {# Schuss abgegeben} other {# Schüsse abgegeben}}"
+  },
+  "locale": {
+    "label": "Sprache",
+    "switcher": "Sprache wechseln"
+  }
+}

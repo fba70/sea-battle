@@ -1,0 +1,29 @@
+{
+  "app": {
+    "name": "SeaDuel",
+    "tagline": "Modern Sea Battle. No signup, no ads, no paywalls."
+  },
+  "nav": {
+    "play": "Play",
+    "howToPlay": "How to play",
+    "faq": "FAQ",
+    "support": "Support the project"
+  },
+  "landing": {
+    "title": "Sink the fleet.",
+    "subtitle": "Fire your first shot in seconds — no account needed.",
+    "playVsBot": "Play against the bot",
+    "playVsFriend": "Play a friend",
+    "foundationNotice": "Project foundation is in place. The board and rules engine land next."
+  },
+  "game": {
+    "yourTurn": "Your turn",
+    "opponentTurn": "Opponent's turn",
+    "shipsRemaining": "{count, plural, =0 {No ships remaining} one {# ship remaining} other {# ships remaining}}",
+    "shotsFired": "{count, plural, =0 {No shots fired} one {# shot fired} other {# shots fired}}"
+  },
+  "locale": {
+    "label": "Language",
+    "switcher": "Change language"
+  }
+}

@@ -1,0 +1,11 @@
+.next
+node_modules
+drizzle
+coverage
+playwright-report
+test-results
+package-lock.json
+
+# Specifications are the source of truth and must not be reformatted (CLAUDE.md).
+specs
+CLAUDE.md

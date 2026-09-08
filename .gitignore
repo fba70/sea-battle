@@ -39,13 +39,13 @@ yarn-error.log*
 next-env.d.ts
 
 # playwright
+# NOTE: /e2e and /playwright.config.ts are intentionally NOT ignored — the spec
+# (§11, §15) requires the E2E suite to be committed. Only generated output is ignored.
 .playwright-mcp
 /test-results
 /playwright-report
 /blob-report
 /playwright/.cache
-/e2e
-/playwright.config.ts
 
 # swc
 /.swc
@@ -55,3 +55,6 @@ next-env.d.ts
 
 # claude code
 .claude/settings.local.json
+
+# drizzle-kit output is generated; migrations are committed from ./drizzle when they exist
+.drizzle

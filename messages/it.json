@@ -1,0 +1,20 @@
+{
+  "app": {
+    "name": "SeaDuel",
+    "tagline": "Battaglia navale moderna. Senza registrazione, senza pubblicità, senza paywall."
+  },
+  "nav": {
+    "play": "Gioca",
+    "howToPlay": "Come si gioca",
+    "faq": "Domande frequenti",
+    "support": "Sostieni il progetto"
+  },
+  "landing": {
+    "title": "Affonda la flotta.",
+    "subtitle": "Spara il tuo primo colpo in pochi secondi, senza account."
+  },
+  "locale": {
+    "label": "Lingua",
+    "switcher": "Cambia lingua"
+  }
+}
