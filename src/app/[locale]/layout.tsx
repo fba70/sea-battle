@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { SoundProvider } from '@/lib/audio/use-audio';
 import { locales, routing, type Locale } from '@/i18n/routing';
 
 import '../globals.css';
@@ -57,7 +58,9 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh antialiased">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <SoundProvider>{children}</SoundProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

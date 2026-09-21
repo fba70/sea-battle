@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { autoPlaceFleet } from '@/game/autoplace';
@@ -16,6 +16,9 @@ import { Board } from './board';
 import { DifficultyPicker } from './difficulty-picker';
 import { FleetTray } from './fleet-tray';
 import { GameOverOverlay } from './game-over-overlay';
+import { soundsForTransition, type AudioSnapshot } from '@/lib/audio/sound-map';
+import { useSound } from '@/lib/audio/use-audio';
+import { SoundToggle } from './sound-toggle';
 import { MoveLog, StatTiles, TurnBanner, type BannerState } from './status-panel';
 import { useBotMatch } from './use-bot-match';
 import { useFleetPlacement } from './use-fleet-placement';
@@ -35,6 +38,7 @@ export function BotMatchScreen() {
   const { snapshot, start, fireAt, restart, setDifficulty } = useBotMatch('medium');
   const [draft, placement] = useFleetPlacement();
   const [targetCursor, setTargetCursor] = useState<Coord>({ x: 0, y: 0 });
+  const audio = useSound();
 
   // Pointer drag: works for mouse and touch alike, and resolves the cell under the
   // finger via the board's data-cell hit targets (spec §7.10 "drag must work by touch").
@@ -71,12 +75,39 @@ export function BotMatchScreen() {
     return () => window.removeEventListener('keydown', onKey);
   }, [placement]);
 
+  // Sound is derived from the same snapshot the UI renders, through a pure
+  // mapping — see src/lib/audio/sound-map.ts.
+  const audioState = useMemo<AudioSnapshot>(() => {
+    const last = snapshot.log.at(-1);
+    return {
+      phase: snapshot.phase,
+      logLength: snapshot.log.length,
+      lastShot: last ? { outcome: last.outcome } : undefined,
+      awaitingBot: snapshot.awaitingBot,
+      humanWon: snapshot.humanWon,
+      humanLost: snapshot.humanLost,
+      placedCount: draft.placements.length,
+      invalidCount: draft.invalidPulse,
+    };
+  }, [snapshot, draft.placements.length, draft.invalidPulse]);
+
+  const previousAudioState = useRef<AudioSnapshot | null>(null);
+
+  useEffect(() => {
+    const sounds = soundsForTransition(previousAudioState.current, audioState);
+    previousAudioState.current = audioState;
+    if (sounds.length > 0) {
+      audio.playAll(sounds);
+    }
+  }, [audioState, audio]);
+
   const handleDifficulty = useCallback(
     (next: BotDifficulty) => {
+      audio.play('click');
       setDifficultyState(next);
       setDifficulty(next);
     },
-    [setDifficulty],
+    [audio, setDifficulty],
   );
 
   const { view, phase, humanWon, humanLost, awaitingBot } = snapshot;
@@ -138,9 +169,12 @@ export function BotMatchScreen() {
         <h1 className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">
           {t('title')}
         </h1>
-        <span className="w-fit rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
-          {t('difficulty.playingAgainst', { level: t(`difficulty.${snapshot.difficulty}`) })}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="w-fit rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
+            {t('difficulty.playingAgainst', { level: t(`difficulty.${snapshot.difficulty}`) })}
+          </span>
+          <SoundToggle />
+        </div>
       </header>
 
       <div className="sticky top-0 z-20 -mx-1 bg-background/90 px-1 py-1 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
@@ -196,14 +230,25 @@ export function BotMatchScreen() {
               />
 
               <div className="grid grid-cols-2 gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={placement.rotate}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    audio.play('click');
+                    placement.rotate();
+                  }}
+                >
                   {t('placement.rotate')}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => placement.applyFleet(randomLegalFleet())}
+                  onClick={() => {
+                    audio.play('click');
+                    placement.applyFleet(randomLegalFleet());
+                  }}
                 >
                   {t('placement.autoPlace')}
                 </Button>
@@ -212,7 +257,10 @@ export function BotMatchScreen() {
                   variant="outline"
                   size="sm"
                   className="col-span-2 text-muted-foreground"
-                  onClick={placement.reset}
+                  onClick={() => {
+                    audio.play('click');
+                    placement.reset();
+                  }}
                   disabled={placedCount === 0}
                 >
                   {t('placement.reset')}

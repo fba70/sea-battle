@@ -122,6 +122,10 @@
     },
     "summary": {
       "title": "Final tally"
+    },
+    "sound": {
+      "mute": "Mute sound",
+      "unmute": "Unmute sound"
     }
   },
   "locale": {
