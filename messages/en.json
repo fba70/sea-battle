@@ -7,7 +7,9 @@
     "play": "Play",
     "howToPlay": "How to play",
     "faq": "FAQ",
-    "support": "Support the project"
+    "support": "Support the project",
+    "label": "Main",
+    "footerLabel": "Footer"
   },
   "landing": {
     "title": "Sink the fleet.",
@@ -126,10 +128,114 @@
     "sound": {
       "mute": "Mute sound",
       "unmute": "Unmute sound"
-    }
+    },
+    "help": "How to play"
   },
   "locale": {
     "label": "Language",
     "switcher": "Change language"
+  },
+  "howToPlay": {
+    "title": "How to play",
+    "intro": "Sea Battle is a guessing duel. Both fleets are hidden; you find the enemy ships one shot at a time. If you have not played in years, these four steps are the whole game.",
+    "goal": {
+      "title": "The goal",
+      "body": "Sink all ten enemy ships before the opponent sinks yours. You never see where their fleet is — only what your own shots reveal."
+    },
+    "place": {
+      "title": "Place your fleet",
+      "board": "The board is a 10 x 10 grid, columns A to J and rows 1 to 10. You place ten ships covering twenty squares in total:",
+      "fleet": {
+        "four": "1 battleship, 4 squares long",
+        "three": "2 cruisers, 3 squares long",
+        "two": "3 destroyers, 2 squares long",
+        "one": "4 submarines, 1 square each"
+      },
+      "orientation": "Every ship sits in a straight line, either horizontally or vertically — never diagonally — and must fit completely on the board. Drag a ship onto the grid, or select it and tap a square. Press R or use the Rotate button to switch between horizontal and vertical. Auto-place fills the whole board for you.",
+      "fleetDiagram": "The ten ships of a fleet: one four-square ship, two of three squares, three of two squares and four single squares."
+    },
+    "touching": {
+      "title": "Keep your ships apart",
+      "body": "Ships may not touch each other. There must be at least one clear square between any two ships.",
+      "diagonals": "This includes corners: two ships that meet only diagonally are still touching, and the placement is rejected.",
+      "help": "You do not have to count squares yourself. The preview turns red and the board shakes when a position is illegal, so you can only ever place a legal fleet.",
+      "legalDiagram": "Two ships separated by one clear row — a legal placement.",
+      "illegalDiagram": "Two ships meeting at a corner — rejected, because diagonal contact still counts as touching.",
+      "allowed": "Allowed",
+      "notAllowed": "Not allowed"
+    },
+    "fire": {
+      "title": "Take turns firing",
+      "turns": "You fire first. On your turn you pick one square on the enemy grid and fire a single shot. A shot is either a miss, a hit, or the hit that sinks a ship.",
+      "againLead": "A hit earns you another shot.",
+      "again": "Keep firing as long as you keep hitting. The turn passes to your opponent only when you miss.",
+      "noRepeat": "You cannot fire at the same square twice — squares you have already resolved are not selectable.",
+      "outcomesDiagram": "Firing grid marks: a hollow ring for a miss, an orange burst for a hit, and a crossed red block for part of a sunk ship."
+    },
+    "sink": {
+      "title": "Sink the fleet",
+      "body": "When every square of a ship has been hit, the ship sinks and its full outline is revealed.",
+      "buffer": "Because ships can never touch, every square around a sunk ship is guaranteed to be empty water. Those squares are marked for you automatically with small dots, and you cannot waste a shot on them.",
+      "win": "The first player to sink all ten of the opponent's ships wins immediately.",
+      "bufferDiagram": "A sunk two-square ship surrounded by dots marking the squares that are now known to be empty."
+    },
+    "bots": {
+      "title": "The three bots",
+      "easy": {
+        "name": "Easy",
+        "body": "Fires at random squares. A relaxed warm-up while you get the feel of the board."
+      },
+      "medium": {
+        "name": "Medium",
+        "body": "Searches in a pattern, and once it lands a hit it works along the ship until it sinks it."
+      },
+      "hard": {
+        "name": "Hard",
+        "body": "Works out which squares your remaining ships could still occupy and fires where a ship is most likely to be. A genuinely tough opponent."
+      }
+    },
+    "salvo": {
+      "title": "Salvo mode",
+      "badge": "Not available yet",
+      "body": "A faster variant is planned: instead of one shot per turn, you fire a salvo of as many shots as you have surviving ships, choosing every target before any of them is resolved. The turn always passes afterwards — in Salvo a hit does not earn another go. Today SeaDuel plays the Classic rules described above."
+    },
+    "cta": "Play against the bot",
+    "faqLink": "Read the FAQ"
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "intro": "Short answers about what SeaDuel does today.",
+    "items": {
+      "registration": {
+        "q": "Do I need to register?",
+        "a": "No. There is no sign-up at all — open the page and play. Accounts are planned for a later stage so that results can be kept, but nothing is gated behind one today."
+      },
+      "free": {
+        "q": "Is it free?",
+        "a": "Yes. SeaDuel is free to play, there are no adverts, and no feature is locked behind a payment."
+      },
+      "bot": {
+        "q": "Who am I playing against?",
+        "a": "A computer opponent, at Easy, Medium or Hard. The bot plays by exactly the same rules you do and only sees what you would see of your board — it cannot look at your ship positions."
+      },
+      "friend": {
+        "q": "Can I play against a friend?",
+        "a": "Not yet. At the moment SeaDuel is a single-player game against the bot. Playing another person is planned but not built."
+      },
+      "mobile": {
+        "q": "Does it work on my phone?",
+        "a": "Yes. SeaDuel runs in the browser on phones, tablets and desktops, and there is nothing to install. On a touchscreen you can drag a ship onto the grid or tap to place it, and tap a square to fire."
+      },
+      "rating": {
+        "q": "Is there a rating or a leaderboard?",
+        "a": "Not yet. Games against the bot are practice only and are not scored or ranked."
+      },
+      "data": {
+        "q": "What do you store about me?",
+        "a": "Because there are no accounts, there is no profile to create or delete. Your browser remembers two things locally: the language you chose and whether sound is muted. Clearing your browser data removes both."
+      }
+    },
+    "cta": "Play against the bot",
+    "rulesLink": "Read how to play"
   }
 }

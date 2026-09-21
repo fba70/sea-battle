@@ -1,7 +1,8 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { HeroGrid } from '@/components/hero-grid';
-import { LocaleSwitcher } from '@/components/locale-switcher';
+import { SiteFooter } from '@/components/site-footer';
+import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import { type Locale } from '@/i18n/routing';
@@ -20,10 +21,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5">
-        <span className="text-sm font-semibold tracking-[0.18em] uppercase">{t('app.name')}</span>
-        <LocaleSwitcher />
-      </header>
+      <SiteHeader />
 
       <main className="relative mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center px-5 py-10 sm:py-16">
         <HeroGrid className="absolute top-1/2 right-0 hidden h-[34rem] w-[34rem] -translate-y-1/2 translate-x-1/5 opacity-70 lg:block" />
@@ -52,7 +50,14 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
             </div>
           </div>
 
-          <ul className="mt-4 flex flex-col gap-2 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:gap-6">
+          <Link
+            href="/how-to-play"
+            className="w-fit rounded-sm text-sm text-muted-foreground underline underline-offset-4 transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            {t('nav.howToPlay')}
+          </Link>
+
+          <ul className="mt-2 flex flex-col gap-2 border-t border-border pt-5 text-sm text-muted-foreground sm:flex-row sm:gap-6">
             {facts.map((fact) => (
               <li key={fact.key} className="flex items-baseline gap-2">
                 <span aria-hidden className="text-primary">
@@ -65,9 +70,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
         </div>
       </main>
 
-      <footer className="mx-auto w-full max-w-5xl px-5 py-6 text-xs text-muted-foreground">
-        {t('app.tagline')}
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -7,7 +7,9 @@
     "play": "Spielen",
     "howToPlay": "Spielanleitung",
     "faq": "Häufige Fragen",
-    "support": "Projekt unterstützen"
+    "support": "Projekt unterstützen",
+    "label": "Hauptmenü",
+    "footerLabel": "Fußzeile"
   },
   "landing": {
     "title": "Versenke die Flotte.",
@@ -126,10 +128,114 @@
     "sound": {
       "mute": "Ton stummschalten",
       "unmute": "Ton einschalten"
-    }
+    },
+    "help": "Anleitung"
   },
   "locale": {
     "label": "Sprache",
     "switcher": "Sprache wechseln"
+  },
+  "howToPlay": {
+    "title": "Spielanleitung",
+    "intro": "Schiffe versenken ist ein Ratespiel. Beide Flotten sind verborgen; du findest die gegnerischen Schiffe Schuss für Schuss. Falls du länger nicht gespielt hast: Diese vier Schritte sind das ganze Spiel.",
+    "goal": {
+      "title": "Das Ziel",
+      "body": "Versenke alle zehn gegnerischen Schiffe, bevor der Gegner deine versenkt. Du siehst nie, wo die feindliche Flotte liegt — nur das, was deine eigenen Schüsse aufdecken."
+    },
+    "place": {
+      "title": "Stelle deine Flotte auf",
+      "board": "Das Spielfeld ist ein Raster aus 10 x 10 Feldern, Spalten A bis J und Zeilen 1 bis 10. Du platzierst zehn Schiffe, die zusammen zwanzig Felder belegen:",
+      "fleet": {
+        "four": "1 Schlachtschiff, 4 Felder lang",
+        "three": "2 Kreuzer, je 3 Felder lang",
+        "two": "3 Zerstörer, je 2 Felder lang",
+        "one": "4 U-Boote, je 1 Feld"
+      },
+      "orientation": "Jedes Schiff liegt in einer geraden Linie, entweder waagerecht oder senkrecht — niemals diagonal — und muss vollständig auf dem Spielfeld liegen. Zieh ein Schiff auf das Raster oder wähle es aus und tippe auf ein Feld. Mit R oder der Schaltfläche „Drehen“ wechselst du zwischen waagerecht und senkrecht. „Automatisch platzieren“ füllt das ganze Feld für dich.",
+      "fleetDiagram": "Die zehn Schiffe einer Flotte: ein Schiff mit vier Feldern, zwei mit drei Feldern, drei mit zwei Feldern und vier mit einem Feld."
+    },
+    "touching": {
+      "title": "Halte Abstand zwischen den Schiffen",
+      "body": "Schiffe dürfen sich nicht berühren. Zwischen zwei Schiffen muss mindestens ein freies Feld liegen.",
+      "diagonals": "Das gilt auch für Ecken: Zwei Schiffe, die sich nur diagonal berühren, gelten ebenfalls als berührend, und die Platzierung wird abgelehnt.",
+      "help": "Du musst die Felder nicht selbst abzählen. Die Vorschau färbt sich rot und das Spielfeld wackelt, wenn eine Position unzulässig ist — so entsteht immer eine regelkonforme Flotte.",
+      "legalDiagram": "Zwei Schiffe, getrennt durch eine freie Reihe — eine zulässige Platzierung.",
+      "illegalDiagram": "Zwei Schiffe, die sich an einer Ecke berühren — abgelehnt, denn diagonaler Kontakt zählt als Berührung.",
+      "allowed": "Erlaubt",
+      "notAllowed": "Nicht erlaubt"
+    },
+    "fire": {
+      "title": "Schießt abwechselnd",
+      "turns": "Du schießt zuerst. In deinem Zug wählst du ein Feld im gegnerischen Raster und gibst einen einzelnen Schuss ab. Ein Schuss ist entweder Wasser, ein Treffer oder der Treffer, der ein Schiff versenkt.",
+      "againLead": "Ein Treffer bringt dir einen weiteren Schuss.",
+      "again": "Du schießt weiter, solange du triffst. Erst wenn du danebenschießt, ist der Gegner am Zug.",
+      "noRepeat": "Auf dasselbe Feld kannst du nicht zweimal schießen — bereits geklärte Felder lassen sich nicht auswählen.",
+      "outcomesDiagram": "Markierungen im Zielraster: ein hohler Ring für Wasser, ein oranger Stern für einen Treffer und ein rotes Feld mit Kreuz für den Teil eines versenkten Schiffs."
+    },
+    "sink": {
+      "title": "Versenke die Flotte",
+      "body": "Wenn jedes Feld eines Schiffs getroffen wurde, sinkt das Schiff und sein vollständiger Umriss wird aufgedeckt.",
+      "buffer": "Da Schiffe sich nie berühren dürfen, ist jedes Feld rund um ein versenktes Schiff garantiert leeres Wasser. Diese Felder werden automatisch mit kleinen Punkten markiert, und du kannst dort keinen Schuss verschwenden.",
+      "win": "Wer zuerst alle zehn Schiffe des Gegners versenkt, gewinnt sofort.",
+      "bufferDiagram": "Ein versenktes Schiff aus zwei Feldern, umgeben von Punkten, die die nun sicher leeren Felder markieren."
+    },
+    "bots": {
+      "title": "Die drei Bots",
+      "easy": {
+        "name": "Leicht",
+        "body": "Schießt auf zufällige Felder. Ein entspanntes Aufwärmen, während du ein Gefühl für das Spielfeld bekommst."
+      },
+      "medium": {
+        "name": "Mittel",
+        "body": "Sucht nach einem Muster, und sobald ein Treffer sitzt, arbeitet er sich am Schiff entlang, bis es versenkt ist."
+      },
+      "hard": {
+        "name": "Schwer",
+        "body": "Berechnet, welche Felder deine verbleibenden Schiffe noch belegen können, und schießt dorthin, wo ein Schiff am wahrscheinlichsten liegt. Ein wirklich harter Gegner."
+      }
+    },
+    "salvo": {
+      "title": "Salven-Modus",
+      "badge": "Noch nicht verfügbar",
+      "body": "Eine schnellere Variante ist geplant: Statt eines Schusses pro Zug gibst du eine Salve mit so vielen Schüssen ab, wie du noch Schiffe hast, und wählst alle Ziele, bevor eines davon ausgewertet wird. Danach wechselt der Zug immer — im Salven-Modus bringt ein Treffer keinen zusätzlichen Schuss. Heute spielt SeaDuel nach den oben beschriebenen klassischen Regeln."
+    },
+    "cta": "Gegen den Bot spielen",
+    "faqLink": "Häufige Fragen lesen"
+  },
+  "faq": {
+    "title": "Häufige Fragen",
+    "intro": "Kurze Antworten dazu, was SeaDuel heute kann.",
+    "items": {
+      "registration": {
+        "q": "Muss ich mich registrieren?",
+        "a": "Nein. Es gibt überhaupt keine Anmeldung — Seite öffnen und spielen. Konten sind für eine spätere Ausbaustufe geplant, damit Ergebnisse erhalten bleiben; heute ist nichts davon abhängig."
+      },
+      "free": {
+        "q": "Ist es kostenlos?",
+        "a": "Ja. SeaDuel ist kostenlos spielbar, es gibt keine Werbung, und keine Funktion ist hinter einer Bezahlschranke."
+      },
+      "bot": {
+        "q": "Gegen wen spiele ich?",
+        "a": "Gegen einen Computergegner in den Stufen Leicht, Mittel oder Schwer. Der Bot spielt nach genau denselben Regeln wie du und sieht von deinem Spielfeld nur das, was du auch sehen würdest — deine Schiffspositionen kann er nicht einsehen."
+      },
+      "friend": {
+        "q": "Kann ich gegen Freunde spielen?",
+        "a": "Noch nicht. Derzeit ist SeaDuel ein Einzelspieler-Spiel gegen den Bot. Das Spiel gegen andere Personen ist geplant, aber noch nicht umgesetzt."
+      },
+      "mobile": {
+        "q": "Funktioniert das auf dem Handy?",
+        "a": "Ja. SeaDuel läuft im Browser auf Handys, Tablets und Desktop-Rechnern, und es muss nichts installiert werden. Auf dem Touchscreen ziehst du ein Schiff auf das Raster oder tippst es an, um es zu platzieren, und tippst auf ein Feld, um zu schießen."
+      },
+      "rating": {
+        "q": "Gibt es eine Wertung oder eine Bestenliste?",
+        "a": "Noch nicht. Spiele gegen den Bot dienen nur der Übung und werden weder gewertet noch in eine Rangliste aufgenommen."
+      },
+      "data": {
+        "q": "Was wird über mich gespeichert?",
+        "a": "Da es keine Konten gibt, gibt es auch kein Profil, das angelegt oder gelöscht werden müsste. Dein Browser merkt sich lokal zwei Dinge: die gewählte Sprache und ob der Ton stummgeschaltet ist. Wenn du die Browserdaten löschst, verschwindet beides."
+      }
+    },
+    "cta": "Gegen den Bot spielen",
+    "rulesLink": "Spielanleitung lesen"
   }
 }

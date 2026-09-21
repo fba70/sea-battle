@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
 import { autoPlaceFleet } from '@/game/autoplace';
 import type { BotDifficulty } from '@/game/bot';
 import { cellsOfPlacement } from '@/game/placement';
@@ -173,6 +174,12 @@ export function BotMatchScreen() {
           <span className="w-fit rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
             {t('difficulty.playingAgainst', { level: t(`difficulty.${snapshot.difficulty}`) })}
           </span>
+          <Link
+            href="/how-to-play"
+            className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+          >
+            {t('help')}
+          </Link>
           <SoundToggle />
         </div>
       </header>
