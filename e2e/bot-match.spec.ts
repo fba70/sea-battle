@@ -25,56 +25,111 @@ test('auto-place fills the fleet and enables the start button', async ({ page })
   await expect(page.getByRole('button', { name: 'Start the battle' })).toBeEnabled();
 });
 
-test('manual placement: selecting a ship and clicking a square places it', async ({ page }) => {
-  await page.goto('/en/play/bot');
+test(
+  'manual placement: selecting a ship and clicking a square places it',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
 
-  // The battleship is preselected (largest first); place it at A1.
-  await page
-    .getByRole('grid', { name: /place your ships/i })
-    .getByRole('gridcell')
-    .first()
-    .click();
+    // The battleship is preselected (largest first); place it at A1.
+    await page
+      .getByRole('grid', { name: /place your ships/i })
+      .getByRole('gridcell')
+      .first()
+      .click();
 
-  await expect(page.getByRole('button', { name: /Battleship/ })).toBeDisabled();
-});
+    await expect(page.getByRole('button', { name: /Battleship/ })).toBeDisabled();
+  },
+);
+test(
+  'places a ship by dragging it from the tray onto the grid',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
 
-test('placing a ship where it would touch another is rejected', async ({ page }) => {
-  await page.goto('/en/play/bot');
-  const grid = page.getByRole('grid', { name: /place your ships/i });
+    const battleship = page.getByRole('button', { name: /Battleship/ });
+    const grid = page.getByRole('grid', { name: /place your ships/i });
 
-  // Battleship at A1-D1.
-  await grid.getByRole('gridcell').nth(0).click();
-  // Now a cruiser at E1 would touch it; the tray count must not drop.
-  await grid.getByRole('gridcell').nth(4).click();
+    // On narrow viewports the sticky action bar is pinned over the bottom of the
+    // page, covering the tray, so scroll it clear first — a player must do the
+    // same. On desktop there is nothing to scroll and this is a no-op.
+    await page.evaluate(() => window.scrollBy(0, 260));
+    await page.waitForTimeout(100);
 
-  await expect(page.getByRole('button', { name: /Cruiser/ })).toContainText('2 left');
-});
+    const tray = await battleship.boundingBox();
+    const board = await grid.boundingBox();
+    const viewport = page.viewportSize();
+    if (!tray || !board || !viewport) throw new Error('expected a laid-out board and tray');
 
-test('plays a full turn: firing resolves and the status updates', async ({ page }) => {
-  await startMatchViaAutoPlace(page);
+    // Drop on column D of the first board row comfortably on screen; a
+    // four-square ship starting there still fits within the board.
+    const cell = board.width / 10;
+    const row = [3, 4, 5, 6, 7, 8, 9, 2, 1, 0].find((candidate) => {
+      const y = board.y + (candidate + 0.5) * cell;
+      return y > 80 && y < viewport.height - 120;
+    });
+    if (row === undefined) throw new Error('no board row is visible to drop onto');
 
-  await expect(page.getByRole('grid', { name: /Enemy waters/i })).toBeVisible();
-  await expect(page.getByRole('status')).toContainText('Your turn');
+    await page.mouse.move(tray.x + tray.width / 2, tray.y + tray.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(board.x + 3.5 * cell, board.y + (row + 0.5) * cell, { steps: 16 });
+    await page.mouse.up();
 
-  const enemy = page.getByRole('grid', { name: /Enemy waters/i });
-  await enemy.getByRole('gridcell').nth(0).click();
+    // The hull is consumed, so the tray entry is exhausted.
+    await expect(battleship).toBeDisabled();
+    await expect(battleship).toContainText('Placed');
+  },
+);
 
-  // A shot always produces a log entry, whether it hit or missed.
-  await expect(page.getByText('Recent shots')).toBeVisible();
-  await expect(page.locator('ol li').first()).toContainText(/Hit|Miss|Sank/);
-});
+test(
+  'placing a ship where it would touch another is rejected',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
+    const grid = page.getByRole('grid', { name: /place your ships/i });
 
-test('keyboard play: arrow keys move the cursor and Enter fires', async ({ page }) => {
-  await startMatchViaAutoPlace(page);
+    // Battleship at A1-D1.
+    await grid.getByRole('gridcell').nth(0).click();
+    // Now a cruiser at E1 would touch it; the tray count must not drop.
+    await grid.getByRole('gridcell').nth(4).click();
 
-  const enemy = page.getByRole('grid', { name: /Enemy waters/i });
-  await enemy.getByRole('gridcell').first().focus();
-  await page.keyboard.press('ArrowRight');
-  await page.keyboard.press('ArrowDown');
-  await page.keyboard.press('Enter');
+    await expect(page.getByRole('button', { name: /Cruiser/ })).toContainText('2 left');
+  },
+);
 
-  await expect(page.locator('ol li').first()).toContainText(/Hit|Miss|Sank/);
-});
+test(
+  'plays a full turn: firing resolves and the status updates',
+  { tag: '@core' },
+  async ({ page }) => {
+    await startMatchViaAutoPlace(page);
+
+    await expect(page.getByRole('grid', { name: /Enemy waters/i })).toBeVisible();
+    await expect(page.getByRole('status')).toContainText('Your turn');
+
+    const enemy = page.getByRole('grid', { name: /Enemy waters/i });
+    await enemy.getByRole('gridcell').nth(0).click();
+
+    // A shot always produces a log entry, whether it hit or missed.
+    await expect(page.getByText('Recent shots')).toBeVisible();
+    await expect(page.locator('ol li').first()).toContainText(/Hit|Miss|Sank/);
+  },
+);
+
+test(
+  'keyboard play: arrow keys move the cursor and Enter fires',
+  { tag: '@core' },
+  async ({ page }) => {
+    await startMatchViaAutoPlace(page);
+
+    const enemy = page.getByRole('grid', { name: /Enemy waters/i });
+    await enemy.getByRole('gridcell').first().focus();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
+    await page.keyboard.press('Enter');
+
+    await expect(page.locator('ol li').first()).toContainText(/Hit|Miss|Sank/);
+  },
+);
 
 test('the opponent board never contains the bot fleet in the DOM', async ({ page }) => {
   await startMatchViaAutoPlace(page);
@@ -103,7 +158,7 @@ test('German locale renders the game UI translated', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Automatisch platzieren' })).toBeVisible();
 });
 
-test('plays a complete match through to a decided result', async ({ page }) => {
+test('plays a complete match through to a decided result', { tag: '@core' }, async ({ page }) => {
   test.setTimeout(180_000);
   await startMatchViaAutoPlace(page);
 

@@ -1,12 +1,13 @@
 import { GeistMono } from 'geist/font/mono';
 import { GeistSans } from 'geist/font/sans';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { SoundProvider } from '@/lib/audio/use-audio';
-import { locales, routing, type Locale } from '@/i18n/routing';
+import { alternatesFor, SITE_URL } from '@/lib/seo';
+import { routing, type Locale } from '@/i18n/routing';
 
 import '../globals.css';
 
@@ -15,6 +16,17 @@ type LocaleParams = { locale: string };
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+/**
+ * Spec §7.10: "Handle `viewport-fit=cover` / safe areas (notches)".
+ * Covering the full screen is what makes the safe-area insets meaningful; the
+ * insets themselves are applied in globals.css and on the two sticky bars.
+ */
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
 
 export async function generateMetadata({
   params,
@@ -25,13 +37,12 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: 'app' });
 
   return {
+    metadataBase: new URL(SITE_URL),
     title: { default: t('name'), template: `%s · ${t('name')}` },
     description: t('tagline'),
-    // Spec §7.14: hreflang alternates across all five locales.
-    alternates: {
-      canonical: `/${locale}`,
-      languages: Object.fromEntries(locales.map((code) => [code, `/${code}`])),
-    },
+    // Only correct for the locale root. Every child page sets its own — metadata
+    // is inherited, so without that /en/faq would claim canonical /en (§7.14).
+    alternates: alternatesFor(locale as Locale, ''),
   };
 }
 

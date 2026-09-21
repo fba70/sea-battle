@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { BotMatchScreen } from '@/components/game/bot-match-screen';
 import type { Locale } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -12,7 +13,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'game' });
 
-  return { title: t('title') };
+  return { title: t('title'), alternates: alternatesFor(locale as Locale, '/play/bot') };
 }
 
 export default async function PlayBotPage({ params }: { params: Promise<{ locale: string }> }) {

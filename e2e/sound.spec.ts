@@ -22,7 +22,7 @@ test('mute control is present, labelled and keyboard reachable', async ({ page }
   );
 });
 
-test('mute preference persists across a reload', async ({ page }) => {
+test('mute preference persists across a reload', { tag: '@core' }, async ({ page }) => {
   await page.goto('/en/play/bot');
   await page.getByRole('button', { name: 'Mute sound' }).click();
 
@@ -53,7 +53,7 @@ test('the preference survives navigating between locales', async ({ page }) => {
   );
 });
 
-test('no audio is constructed before a user gesture', async ({ page }) => {
+test('no audio is constructed before a user gesture', { tag: '@core' }, async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as { __audioContexts: number }).__audioContexts = 0;
     const Original = window.AudioContext;
@@ -75,32 +75,36 @@ test('no audio is constructed before a user gesture', async ({ page }) => {
   expect(before).toBe(0);
 });
 
-test('playing a full turn with sound on produces no console errors', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  page.on('console', (message) => {
-    if (message.type() === 'error') errors.push(message.text());
-  });
+test(
+  'playing a full turn with sound on produces no console errors',
+  { tag: '@core' },
+  async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text());
+    });
 
-  await page.goto('/en/play/bot');
-  await page.getByRole('button', { name: 'Auto-place' }).click();
-  await page.getByRole('button', { name: 'Start the battle' }).click();
+    await page.goto('/en/play/bot');
+    await page.getByRole('button', { name: 'Auto-place' }).click();
+    await page.getByRole('button', { name: 'Start the battle' }).click();
 
-  const enemy = page.getByRole('grid', { name: /Enemy waters/i });
-  const shootable = enemy.locator('[aria-label*="unexplored"]:not([disabled])');
+    const enemy = page.getByRole('grid', { name: /Enemy waters/i });
+    const shootable = enemy.locator('[aria-label*="unexplored"]:not([disabled])');
 
-  for (let shot = 0; shot < 12; shot += 1) {
-    if ((await shootable.count()) === 0) {
-      await page.waitForTimeout(400);
-      continue;
+    for (let shot = 0; shot < 12; shot += 1) {
+      if ((await shootable.count()) === 0) {
+        await page.waitForTimeout(400);
+        continue;
+      }
+      await shootable.first().click();
+      await page.waitForTimeout(60);
     }
-    await shootable.first().click();
-    await page.waitForTimeout(60);
-  }
 
-  await page.waitForTimeout(500);
-  expect(errors).toEqual([]);
-});
+    await page.waitForTimeout(500);
+    expect(errors).toEqual([]);
+  },
+);
 
 test('muting mid-game keeps the game fully playable', async ({ page }) => {
   await page.goto('/en/play/bot');

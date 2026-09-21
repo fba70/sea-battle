@@ -97,6 +97,14 @@
     @apply bg-background font-sans text-foreground;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+
+    /*
+     * Spec §7.10: with viewport-fit=cover the page paints edge to edge, so the
+     * rounded corners and the landscape notch would clip content. Insets are 0
+     * on devices without cutouts, so portrait layouts are unchanged.
+     */
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 
   /* Numbers that change in place should not reflow their container. */

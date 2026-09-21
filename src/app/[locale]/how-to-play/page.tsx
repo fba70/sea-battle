@@ -13,6 +13,7 @@ import { SiteHeader } from '@/components/site-header';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
 
 export async function generateMetadata({
   params,
@@ -22,7 +23,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'howToPlay' });
 
-  return { title: t('title'), description: t('intro') };
+  return {
+    title: t('title'),
+    description: t('intro'),
+    alternates: alternatesFor(locale as Locale, '/how-to-play'),
+  };
 }
 
 function Step({

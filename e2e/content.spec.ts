@@ -83,7 +83,7 @@ test('every diagram carries a text alternative', async ({ page }) => {
   }
 });
 
-test('FAQ accordion expands and collapses by click', async ({ page }) => {
+test('FAQ accordion expands and collapses by click', { tag: '@core' }, async ({ page }) => {
   await page.goto('/en/faq');
 
   const trigger = page.getByRole('button', { name: 'Is it free?' });
@@ -97,7 +97,7 @@ test('FAQ accordion expands and collapses by click', async ({ page }) => {
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('FAQ accordion is operable by keyboard', async ({ page }) => {
+test('FAQ accordion is operable by keyboard', { tag: '@core' }, async ({ page }) => {
   await page.goto('/en/faq');
 
   const trigger = page.getByRole('button', { name: 'Do I need to register?' });

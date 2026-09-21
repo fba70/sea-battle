@@ -184,7 +184,7 @@ export function BotMatchScreen() {
         </div>
       </header>
 
-      <div className="sticky top-0 z-20 -mx-1 bg-background/90 px-1 py-1 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
+      <div className="sticky top-[env(safe-area-inset-top,0px)] z-20 -mx-1 bg-background/90 px-1 py-1 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
         <TurnBanner
           state={bannerState}
           detail={
@@ -360,7 +360,7 @@ export function BotMatchScreen() {
       {/* Thumb-reachable primary action on small screens (spec §7.10). Lives outside
           the board grid so it never floats over the sidebar controls. */}
       {placing ? (
-        <div className="sticky bottom-0 z-20 -mx-1 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-4 sm:px-4 lg:hidden">
+        <div className="sticky bottom-0 z-20 -mx-1 border-t border-border bg-background/95 px-3 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] backdrop-blur sm:-mx-4 sm:px-4 lg:hidden">
           <Button
             type="button"
             size="lg"

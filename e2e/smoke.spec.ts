@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
  * Foundation smoke test. This is the harness the full play-loop E2E (spec §15)
  * will grow into — it already runs on both a desktop and a mobile viewport.
  */
-test('redirects the bare root to the default locale', async ({ page }) => {
+test('redirects the bare root to the default locale', { tag: '@core' }, async ({ page }) => {
   await page.goto('/');
 
   await expect(page).toHaveURL(/\/en$/);
@@ -27,7 +27,7 @@ test('falls back to English for untranslated keys', async ({ page }) => {
   await expect(page.getByText('10 x 10 board, ten ships')).toBeVisible();
 });
 
-test('language switcher moves between locales', async ({ page }) => {
+test('language switcher moves between locales', { tag: '@core' }, async ({ page }) => {
   await page.goto('/en');
 
   await page.getByLabel('Change language').selectOption('de');
