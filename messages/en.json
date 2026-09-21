@@ -11,10 +11,15 @@
   },
   "landing": {
     "title": "Sink the fleet.",
-    "subtitle": "Fire your first shot in seconds — no account needed.",
+    "subtitle": "Place your fleet, out-think the bot, and sink all ten ships.",
     "playVsBot": "Play against the bot",
     "playVsFriend": "Play a friend",
-    "foundationNotice": "Project foundation is in place. The board and rules engine land next."
+    "comingSoon": "Soon",
+    "facts": {
+      "board": "10 x 10 board, ten ships",
+      "rules": "Classic rules — a hit earns another shot",
+      "bots": "Three bot difficulties"
+    }
   },
   "game": {
     "title": "Battle against the bot",
@@ -55,7 +60,8 @@
       "autoPlace": "Auto-place",
       "reset": "Clear board",
       "start": "Start the battle",
-      "incomplete": "Place all ten ships"
+      "incomplete": "Place all ten ships",
+      "done": "Placed"
     },
     "status": {
       "placement": "Position your fleet to begin",
@@ -66,17 +72,20 @@
     },
     "result": {
       "wonBody": "You sank every enemy ship. Another round?",
-      "lostBody": "The bot sank your fleet first. Try again?"
+      "lostBody": "The bot sank your fleet first. Try again?",
+      "wonTitle": "Victory",
+      "lostTitle": "Defeated"
     },
     "action": {
       "playAgain": "Play again",
       "backHome": "Back to start"
     },
     "stats": {
-      "enemyShips": "Enemy ships left",
-      "yourShips": "Your ships left",
-      "shotsFired": "Shots fired",
-      "hits": "Hits"
+      "enemyShips": "Enemy left",
+      "yourShips": "You left",
+      "shotsFired": "Shots",
+      "hits": "Hits",
+      "accuracy": "Accuracy"
     },
     "log": {
       "title": "Recent shots",
@@ -98,6 +107,21 @@
       "sunk": "sunk",
       "miss": "miss",
       "knownEmpty": "known empty"
+    },
+    "placed": "{placed} of {total} ships placed",
+    "shipsLeftShort": "{count} left",
+    "allPlaced": "Fleet ready",
+    "thinking": "Thinking",
+    "announce": {
+      "youHit": "Your shot at {cell} hit.",
+      "youMiss": "Your shot at {cell} missed.",
+      "youSunk": "Your shot at {cell} sank the {ship}.",
+      "botHit": "The bot hit your fleet at {cell}.",
+      "botMiss": "The bot missed at {cell}.",
+      "botSunk": "The bot sank your {ship} at {cell}."
+    },
+    "summary": {
+      "title": "Final tally"
     }
   },
   "locale": {

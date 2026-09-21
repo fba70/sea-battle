@@ -10,12 +10,13 @@ import { cellsOfPlacement } from '@/game/placement';
 import { createRng } from '@/game/rng';
 import type { Coord, ShipPlacement } from '@/game/types';
 import type { CellMark } from './board-model';
+import { FLEET_SHIP_COUNT } from '@/game/constants';
 import { coordLabel, opponentMarks, opponentOutlines, ownMarks, ownOutlines } from './board-model';
 import { Board } from './board';
 import { DifficultyPicker } from './difficulty-picker';
 import { FleetTray } from './fleet-tray';
 import { GameOverOverlay } from './game-over-overlay';
-import { MoveLog, TurnBanner } from './status-panel';
+import { MoveLog, StatTiles, TurnBanner, type BannerState } from './status-panel';
 import { useBotMatch } from './use-bot-match';
 import { useFleetPlacement } from './use-fleet-placement';
 
@@ -82,7 +83,7 @@ export function BotMatchScreen() {
   const placing = phase === 'placement';
   const finished = phase === 'finished';
 
-  const bannerState = placing
+  const bannerState: BannerState = placing
     ? 'placement'
     : humanWon
       ? 'won'
@@ -94,6 +95,19 @@ export function BotMatchScreen() {
 
   const lastHumanShot = [...snapshot.log].reverse().find((entry) => entry.actor === 'human');
   const lastBotShot = [...snapshot.log].reverse().find((entry) => entry.actor === 'bot');
+  const lastShot = snapshot.log.at(-1);
+
+  const describeShot = (entry: typeof lastShot) => {
+    if (!entry) return undefined;
+    const who = entry.actor === 'human' ? 'you' : 'bot';
+    const outcome = entry.sunkShipClass ? 'Sunk' : entry.outcome === 'miss' ? 'Miss' : 'Hit';
+    return t(`announce.${who}${outcome}`, {
+      cell: coordLabel(entry.coord),
+      ship: entry.sunkShipClass ? t(`ship.${entry.sunkShipClass}`) : '',
+    });
+  };
+
+  const placedCount = draft.placements.length;
 
   const describeTargetCell = (coord: Coord, mark: CellMark) => {
     const canFire = !placing && !finished && !awaitingBot && mark === 'water';
@@ -117,18 +131,27 @@ export function BotMatchScreen() {
   return (
     <div
       className={`mx-auto flex w-full flex-col gap-4 px-1 py-4 sm:px-4 sm:py-6 ${
-        placing ? 'max-w-4xl' : 'max-w-6xl'
+        placing ? 'max-w-4xl pb-24 lg:pb-6' : 'max-w-6xl'
       }`}
     >
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t('title')}</h1>
-        <span className="text-sm text-muted-foreground">
+      <header className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <h1 className="text-xl font-semibold tracking-tight text-balance sm:text-2xl">
+          {t('title')}
+        </h1>
+        <span className="w-fit rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
           {t('difficulty.playingAgainst', { level: t(`difficulty.${snapshot.difficulty}`) })}
         </span>
       </header>
 
       <div className="sticky top-0 z-20 -mx-1 bg-background/90 px-1 py-1 backdrop-blur sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
-        <TurnBanner state={bannerState} />
+        <TurnBanner
+          state={bannerState}
+          detail={
+            placing
+              ? t('placed', { placed: placedCount, total: FLEET_SHIP_COUNT })
+              : describeShot(lastShot)
+          }
+        />
       </div>
 
       <div
@@ -157,7 +180,9 @@ export function BotMatchScreen() {
                   onPointerLeaveBoard: () => placement.setHover(null),
                 }}
               />
-              <p className="mt-2 text-xs text-muted-foreground">{t('placement.instructions')}</p>
+              <p className="mt-2.5 max-w-prose text-xs leading-relaxed text-muted-foreground">
+                {t('placement.instructions')}
+              </p>
             </div>
 
             <aside className="flex flex-col gap-4">
@@ -166,12 +191,11 @@ export function BotMatchScreen() {
               <FleetTray
                 remaining={draft.remaining}
                 selected={draft.selected}
-                orientation={draft.orientation}
                 onSelect={placement.selectShip}
                 onBeginDrag={placement.beginDrag}
               />
 
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" size="sm" onClick={placement.rotate}>
                   {t('placement.rotate')}
                 </Button>
@@ -185,10 +209,11 @@ export function BotMatchScreen() {
                 </Button>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
+                  className="col-span-2 text-muted-foreground"
                   onClick={placement.reset}
-                  disabled={draft.placements.length === 0}
+                  disabled={placedCount === 0}
                 >
                   {t('placement.reset')}
                 </Button>
@@ -196,6 +221,8 @@ export function BotMatchScreen() {
 
               <Button
                 type="button"
+                size="lg"
+                className="hidden lg:inline-flex"
                 disabled={!draft.complete}
                 onClick={() => start(draft.placements)}
               >
@@ -207,6 +234,7 @@ export function BotMatchScreen() {
           <>
             <Board
               className="w-full max-w-[30rem]"
+              active={!finished && !awaitingBot}
               title={t('board.enemyWaters')}
               gridLabel={t('board.enemyGrid')}
               marks={opponentMarks(view)}
@@ -223,6 +251,7 @@ export function BotMatchScreen() {
 
             <Board
               className="w-full max-w-[30rem]"
+              active={!finished && awaitingBot}
               title={t('board.yourFleet')}
               gridLabel={t('board.yourGrid')}
               marks={ownMarks(view)}
@@ -231,26 +260,26 @@ export function BotMatchScreen() {
             />
 
             <aside className="flex flex-col gap-4">
-              <dl className="grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                  <dt className="text-xs text-muted-foreground">{t('stats.enemyShips')}</dt>
-                  <dd className="text-lg font-semibold tabular-nums">
-                    {view.opponent.shipsRemaining}
-                  </dd>
-                </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                  <dt className="text-xs text-muted-foreground">{t('stats.yourShips')}</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{view.own.shipsRemaining}</dd>
-                </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                  <dt className="text-xs text-muted-foreground">{t('stats.shotsFired')}</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{view.opponent.shotsFired}</dd>
-                </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
-                  <dt className="text-xs text-muted-foreground">{t('stats.hits')}</dt>
-                  <dd className="text-lg font-semibold tabular-nums">{view.opponent.hits}</dd>
-                </div>
-              </dl>
+              <StatTiles
+                items={[
+                  {
+                    key: 'enemy',
+                    label: t('stats.enemyShips'),
+                    value: String(view.opponent.shipsRemaining),
+                  },
+                  {
+                    key: 'yours',
+                    label: t('stats.yourShips'),
+                    value: String(view.own.shipsRemaining),
+                  },
+                  {
+                    key: 'shots',
+                    label: t('stats.shotsFired'),
+                    value: String(view.opponent.shotsFired),
+                  },
+                  { key: 'hits', label: t('stats.hits'), value: String(view.opponent.hits) },
+                ]}
+              />
 
               <MoveLog log={snapshot.log} />
               <p className="text-xs text-muted-foreground">{t('keyboardHint')}</p>
@@ -258,8 +287,36 @@ export function BotMatchScreen() {
           </>
         )}
 
-        {finished ? <GameOverOverlay won={humanWon} onRestart={restart} /> : null}
+        {finished ? (
+          <GameOverOverlay
+            won={humanWon}
+            stats={{
+              shots: view.opponent.shotsFired,
+              hits: view.opponent.hits,
+              accuracy:
+                view.opponent.shotsFired === 0 ? 0 : view.opponent.hits / view.opponent.shotsFired,
+              shipsLeft: view.own.shipsRemaining,
+            }}
+            onRestart={restart}
+          />
+        ) : null}
       </div>
+
+      {/* Thumb-reachable primary action on small screens (spec §7.10). Lives outside
+          the board grid so it never floats over the sidebar controls. */}
+      {placing ? (
+        <div className="sticky bottom-0 z-20 -mx-1 border-t border-border bg-background/95 px-3 py-2.5 backdrop-blur sm:-mx-4 sm:px-4 lg:hidden">
+          <Button
+            type="button"
+            size="lg"
+            className="w-full"
+            disabled={!draft.complete}
+            onClick={() => start(draft.placements)}
+          >
+            {draft.complete ? t('placement.start') : t('placement.incomplete')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -11,10 +11,15 @@
   },
   "landing": {
     "title": "Versenke die Flotte.",
-    "subtitle": "Gib deinen ersten Schuss in Sekunden ab — ganz ohne Konto.",
+    "subtitle": "Stelle deine Flotte auf, überliste den Bot und versenke alle zehn Schiffe.",
     "playVsBot": "Gegen den Bot spielen",
     "playVsFriend": "Gegen Freunde spielen",
-    "foundationNotice": "Das Projektgerüst steht. Spielfeld und Regel-Engine folgen als Nächstes."
+    "comingSoon": "Bald",
+    "facts": {
+      "board": "10 x 10 Raster, zehn Schiffe",
+      "rules": "Klassische Regeln — ein Treffer bringt einen weiteren Schuss",
+      "bots": "Drei Bot-Schwierigkeiten"
+    }
   },
   "game": {
     "title": "Kampf gegen den Bot",
@@ -55,7 +60,8 @@
       "autoPlace": "Automatisch platzieren",
       "reset": "Feld leeren",
       "start": "Gefecht starten",
-      "incomplete": "Platziere alle zehn Schiffe"
+      "incomplete": "Platziere alle zehn Schiffe",
+      "done": "Platziert"
     },
     "status": {
       "placement": "Stelle deine Flotte auf, um zu beginnen",
@@ -66,17 +72,20 @@
     },
     "result": {
       "wonBody": "Du hast jedes feindliche Schiff versenkt. Noch eine Runde?",
-      "lostBody": "Der Bot hat deine Flotte zuerst versenkt. Nochmal versuchen?"
+      "lostBody": "Der Bot hat deine Flotte zuerst versenkt. Nochmal versuchen?",
+      "wonTitle": "Sieg",
+      "lostTitle": "Niederlage"
     },
     "action": {
       "playAgain": "Nochmal spielen",
       "backHome": "Zurück zum Start"
     },
     "stats": {
-      "enemyShips": "Feindliche Schiffe übrig",
-      "yourShips": "Deine Schiffe übrig",
-      "shotsFired": "Abgegebene Schüsse",
-      "hits": "Treffer"
+      "enemyShips": "Gegner übrig",
+      "yourShips": "Du übrig",
+      "shotsFired": "Schüsse",
+      "hits": "Treffer",
+      "accuracy": "Trefferquote"
     },
     "log": {
       "title": "Letzte Schüsse",
@@ -98,6 +107,21 @@
       "sunk": "versenkt",
       "miss": "Wasser",
       "knownEmpty": "sicher leer"
+    },
+    "placed": "{placed} von {total} Schiffen platziert",
+    "shipsLeftShort": "noch {count}",
+    "allPlaced": "Flotte bereit",
+    "thinking": "Überlegt",
+    "announce": {
+      "youHit": "Dein Schuss auf {cell} war ein Treffer.",
+      "youMiss": "Dein Schuss auf {cell} ging daneben.",
+      "youSunk": "Dein Schuss auf {cell} hat {ship} versenkt.",
+      "botHit": "Der Bot hat deine Flotte bei {cell} getroffen.",
+      "botMiss": "Der Bot hat bei {cell} danebengeschossen.",
+      "botSunk": "Der Bot hat dein Schiff {ship} bei {cell} versenkt."
+    },
+    "summary": {
+      "title": "Endstand"
     }
   },
   "locale": {

@@ -19,14 +19,12 @@ test('serves German content with the correct lang attribute', async ({ page }) =
 });
 
 test('falls back to English for untranslated keys', async ({ page }) => {
-  // fr has no landing.foundationNotice — it must render the English string, not crash.
+  // fr has no landing.facts — those must render the English strings, not crash.
   await page.goto('/fr');
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Coulez la flotte.');
-  await expect(
-    page.getByText('Project foundation is in place. The board and rules engine land next.'),
-  ).toBeVisible();
+  await expect(page.getByText('10 x 10 board, ten ships')).toBeVisible();
 });
 
 test('language switcher moves between locales', async ({ page }) => {

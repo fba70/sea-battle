@@ -9,6 +9,12 @@
 :root {
   --radius: 0.625rem;
 
+  /* Motion tokens (spec §8: "consistent easing/duration tokens"). */
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 380ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.208 0.042 265.755);
   --card: oklch(1 0 0);
@@ -53,6 +59,9 @@
 }
 
 @theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -85,8 +94,14 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Numbers that change in place should not reflow their container. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 
   /* Spec §7.1 / §7.13: every animation must degrade to an instant state change. */

@@ -3,18 +3,16 @@
 import { useTranslations } from 'next-intl';
 
 import { FLEET } from '@/game/constants';
-import type { Orientation, ShipClass } from '@/game/types';
+import type { ShipClass } from '@/game/types';
 
 export function FleetTray({
   remaining,
   selected,
-  orientation,
   onSelect,
   onBeginDrag,
 }: {
   remaining: ReadonlyMap<ShipClass, number>;
   selected: ShipClass | null;
-  orientation: Orientation;
   onSelect: (shipClass: ShipClass) => void;
   onBeginDrag: (shipClass: ShipClass) => void;
 }) {
@@ -40,12 +38,15 @@ export function FleetTray({
                 if (!exhausted) onSelect(entry.shipClass);
               }}
               className={[
-                'flex w-full touch-none items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left transition-colors',
-                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                'flex w-full touch-none items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left',
+                'transition-[background-color,border-color,opacity] duration-150',
+                'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none',
                 exhausted
-                  ? 'cursor-not-allowed border-border/60 opacity-45'
-                  : 'cursor-grab hover:border-primary/70',
-                active && !exhausted ? 'border-primary bg-primary/15' : 'border-border bg-card',
+                  ? 'cursor-not-allowed border-border/50 opacity-40'
+                  : 'cursor-grab hover:border-primary/60 hover:bg-primary/5 active:scale-[0.99]',
+                active && !exhausted
+                  ? 'border-primary bg-primary/15 shadow-[inset_2px_0_0_0_var(--color-primary)]'
+                  : 'border-border bg-card',
               ].join(' ')}
             >
               <span className="flex min-w-0 flex-col">
@@ -61,15 +62,18 @@ export function FleetTray({
                     <span
                       key={index}
                       className={[
-                        'block rounded-[2px]',
-                        orientation === 'horizontal' && active ? 'h-3 w-2.5' : 'h-2.5 w-2.5',
-                        exhausted ? 'bg-muted-foreground/40' : 'bg-primary/80',
+                        'block size-2.5 rounded-[3px] transition-colors',
+                        exhausted ? 'bg-muted-foreground/30' : 'bg-primary/85',
                       ].join(' ')}
                     />
                   ))}
                 </span>
-                <span className="w-8 text-right text-sm tabular-nums text-muted-foreground">
-                  {left}/{entry.count}
+                <span
+                  className={`w-16 text-right text-xs tabular-nums ${
+                    exhausted ? 'text-muted-foreground/70' : 'font-medium text-foreground'
+                  }`}
+                >
+                  {exhausted ? t('placement.done') : t('shipsLeftShort', { count: left })}
                 </span>
               </span>
             </button>

@@ -47,7 +47,7 @@ test('placing a ship where it would touch another is rejected', async ({ page })
   // Now a cruiser at E1 would touch it; the tray count must not drop.
   await grid.getByRole('gridcell').nth(4).click();
 
-  await expect(page.getByRole('button', { name: /Cruiser/ })).toContainText('2/2');
+  await expect(page.getByRole('button', { name: /Cruiser/ })).toContainText('2 left');
 });
 
 test('plays a full turn: firing resolves and the status updates', async ({ page }) => {

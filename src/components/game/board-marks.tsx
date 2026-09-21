@@ -162,3 +162,33 @@ export function SplashRipple({ coord, mark }: { coord: Coord; mark: CellMark }) 
     />
   );
 }
+
+/**
+ * The placement preview, drawn as one hull spanning the whole ship rather than a
+ * row of separate squares — so what you see is what gets placed.
+ */
+export function GhostHull({ ghost }: { ghost: { cells: readonly Coord[]; valid: boolean } }) {
+  const xs = ghost.cells.map((cell) => cell.x);
+  const ys = ghost.cells.map((cell) => cell.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const width = Math.max(...xs) - minX + 1;
+  const height = Math.max(...ys) - minY + 1;
+
+  return (
+    <g>
+      <rect
+        x={minX + 0.12}
+        y={minY + 0.12}
+        width={width - 0.24}
+        height={height - 0.24}
+        rx={0.26}
+        className={
+          ghost.valid ? 'fill-primary/40 stroke-primary' : 'fill-destructive/35 stroke-destructive'
+        }
+        strokeWidth={0.07}
+        strokeDasharray={ghost.valid ? undefined : '0.22 0.14'}
+      />
+    </g>
+  );
+}

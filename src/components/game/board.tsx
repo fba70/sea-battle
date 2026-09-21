@@ -6,7 +6,7 @@ import { useCallback, useRef, type PointerEvent as ReactPointerEvent } from 'rea
 import { BOARD_SIZE, COLUMN_LABELS } from '@/game/constants';
 import type { Coord } from '@/game/types';
 import { allCoords, coordLabel, markAt, type CellMark, type ShipOutline } from './board-model';
-import { CellGlyph, ShipHull, SplashRipple } from './board-marks';
+import { CellGlyph, GhostHull, ShipHull, SplashRipple } from './board-marks';
 
 export interface BoardInteraction {
   readonly cursor: Coord;
@@ -36,6 +36,8 @@ export interface BoardProps {
   readonly invalidPulseKey?: number;
   readonly gridLabel: string;
   readonly className?: string;
+  /** Draws attention to the board that is currently in play (spec §7.1 turn affordance). */
+  readonly active?: boolean;
 }
 
 const AXIS = Array.from({ length: BOARD_SIZE }, (_, index) => index);
@@ -50,6 +52,7 @@ export function Board({
   invalidPulseKey,
   gridLabel,
   className = '',
+  active = false,
 }: BoardProps) {
   const reduceMotion = useReducedMotion();
   const gridRef = useRef<HTMLDivElement>(null);
@@ -101,7 +104,13 @@ export function Board({
 
   return (
     <section className={`flex min-w-0 flex-col gap-2 ${className}`} aria-label={title}>
-      <h2 className="text-sm font-medium tracking-wide text-muted-foreground uppercase">{title}</h2>
+      <h2
+        className={`text-xs font-semibold tracking-[0.12em] uppercase transition-colors ${
+          active ? 'text-foreground' : 'text-muted-foreground'
+        }`}
+      >
+        {title}
+      </h2>
 
       <div className="grid grid-cols-[0.9rem_minmax(0,1fr)] grid-rows-[1rem_auto] gap-0.5 sm:grid-cols-[1.25rem_minmax(0,1fr)] sm:gap-1">
         {/* Column labels A-J */}
@@ -109,7 +118,7 @@ export function Board({
           {COLUMN_LABELS.map((label) => (
             <span
               key={label}
-              className="text-center text-[0.625rem] leading-5 font-medium text-muted-foreground"
+              className="text-center text-[0.6875rem] leading-4 font-medium text-muted-foreground/80 sm:leading-5"
             >
               {label}
             </span>
@@ -121,7 +130,7 @@ export function Board({
           {AXIS.map((index) => (
             <span
               key={index}
-              className="flex items-center justify-center text-[0.625rem] font-medium text-muted-foreground"
+              className="flex items-center justify-center text-[0.6875rem] font-medium text-muted-foreground/80"
             >
               {index + 1}
             </span>
@@ -129,7 +138,14 @@ export function Board({
         </div>
 
         <motion.div
-          className="relative col-start-2 row-start-2 aspect-square w-full overflow-hidden rounded-lg border border-border bg-[color-mix(in_oklab,var(--color-primary)_10%,var(--color-card))] shadow-inner"
+          className={[
+            'relative col-start-2 row-start-2 aspect-square w-full overflow-hidden rounded-xl border',
+            'bg-[color-mix(in_oklab,var(--color-primary)_13%,var(--color-card))] shadow-inner',
+            'transition-[box-shadow,border-color] duration-200',
+            active
+              ? 'border-primary/60 shadow-[0_0_0_1px_var(--color-primary)] ring-1 ring-primary/25'
+              : 'border-border',
+          ].join(' ')}
           animate={invalidPulseKey && !reduceMotion ? { x: [0, -4, 4, -3, 3, 0] } : { x: 0 }}
           key={`shake-${invalidPulseKey ?? 0}`}
           transition={{ duration: 0.28 }}
@@ -177,24 +193,8 @@ export function Board({
               />
             ) : null}
 
-            {ghost
-              ? ghost.cells.map((cell) => (
-                  <rect
-                    key={`ghost-${cell.x},${cell.y}`}
-                    x={cell.x + 0.08}
-                    y={cell.y + 0.08}
-                    width={0.84}
-                    height={0.84}
-                    rx={0.18}
-                    className={
-                      ghost.valid
-                        ? 'fill-primary/45 stroke-primary'
-                        : 'fill-destructive/40 stroke-destructive'
-                    }
-                    strokeWidth={0.06}
-                  />
-                ))
-              : null}
+            {/* One continuous hull, so the preview looks like the ship you will get. */}
+            {ghost && ghost.cells.length > 0 ? <GhostHull ghost={ghost} /> : null}
           </svg>
 
           {/* Interaction + accessibility layer. Kept in HTML so every cell is a real
