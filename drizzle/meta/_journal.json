@@ -15,6 +15,13 @@
       "when": 1790019093433,
       "tag": "0001_sour_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790084106930,
+      "tag": "0002_nappy_bug",
+      "breakpoints": true
     }
   ]
 }
