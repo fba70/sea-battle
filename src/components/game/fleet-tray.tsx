@@ -38,7 +38,10 @@ export function FleetTray({
                 if (!exhausted) onSelect(entry.shipClass);
               }}
               className={[
-                'flex w-full touch-none items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left',
+                // touch-pan-y, not touch-none: `touch-action: none` stopped the page
+                // scrolling whenever a touch began on a tray row, and the tray covers
+                // a third of the placement screen on a phone (§7.10).
+                'flex w-full touch-pan-y items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left',
                 'transition-[background-color,border-color,opacity] duration-150',
                 'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none',
                 exhausted

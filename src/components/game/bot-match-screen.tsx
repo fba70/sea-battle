@@ -50,20 +50,30 @@ export function BotMatchScreen() {
       const coord = cellFromPointer(event.clientX, event.clientY);
       if (coord) placement.setHover(coord);
     };
-    const finish = (event: PointerEvent) => {
+    const drop = (event: PointerEvent) => {
       const coord = cellFromPointer(event.clientX, event.clientY);
       if (coord) placement.placeAt(coord);
       placement.setHover(null);
     };
 
+    /**
+     * A cancelled gesture must abandon the drag, never commit it. iOS fires
+     * pointercancel whenever the browser takes the gesture over — a scroll, a
+     * system edge swipe, an incoming call — and treating that as a drop placed
+     * ships the player never intended to place.
+     */
+    const abort = () => {
+      placement.setHover(null);
+    };
+
     window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', finish, { once: true });
-    window.addEventListener('pointercancel', finish, { once: true });
+    window.addEventListener('pointerup', drop, { once: true });
+    window.addEventListener('pointercancel', abort, { once: true });
 
     return () => {
       window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', finish);
-      window.removeEventListener('pointercancel', finish);
+      window.removeEventListener('pointerup', drop);
+      window.removeEventListener('pointercancel', abort);
     };
   }, [draft.dragging, placement]);
 
@@ -163,7 +173,7 @@ export function BotMatchScreen() {
   return (
     <div
       className={`mx-auto flex w-full flex-col gap-4 px-1 py-4 sm:px-4 sm:py-6 ${
-        placing ? 'max-w-4xl pb-24 lg:pb-6' : 'max-w-6xl'
+        placing ? 'max-w-4xl' : 'max-w-6xl'
       }`}
     >
       <header className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
@@ -360,7 +370,18 @@ export function BotMatchScreen() {
       {/* Thumb-reachable primary action on small screens (spec §7.10). Lives outside
           the board grid so it never floats over the sidebar controls. */}
       {placing ? (
-        <div className="sticky bottom-0 z-20 -mx-1 border-t border-border bg-background/95 px-3 pt-2.5 pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] backdrop-blur sm:-mx-4 sm:px-4 lg:hidden">
+        <div
+          className={[
+            'z-20 -mx-1 border-t border-border bg-background/95 px-3 pt-2.5 backdrop-blur',
+            'pb-[calc(0.625rem+env(safe-area-inset-bottom,0px))] sm:-mx-4 sm:px-4 lg:hidden',
+            // Pin the bar only once the action is actually available. While the
+            // fleet is incomplete the button is disabled, and pinning it would
+            // float a dead control over the fleet tray — hiding the very
+            // controls needed to finish placing (§7.10 acceptance: placement
+            // must be completable on a 360px phone).
+            draft.complete ? 'sticky bottom-0' : '',
+          ].join(' ')}
+        >
           <Button
             type="button"
             size="lg"

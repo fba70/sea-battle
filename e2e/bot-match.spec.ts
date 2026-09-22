@@ -42,6 +42,99 @@ test(
   },
 );
 test(
+  'the action bar never covers the fleet tray while ships are still to place',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
+
+    // Regression guard: a pinned but disabled "Place all ten ships" bar used to
+    // float over the whole tray on short viewports, hiding the controls needed
+    // to finish placing (§7.10: placement must be completable on a 360px phone).
+    for (const ship of ['Battleship', 'Cruiser', 'Destroyer', 'Submarine']) {
+      const entry = page.getByRole('button', { name: new RegExp(ship) });
+      await entry.scrollIntoViewIfNeeded();
+      const box = await entry.boundingBox();
+      if (!box) throw new Error(`${ship} tray row is not laid out`);
+
+      const onTop = await page.evaluate(
+        ([x, y]) => {
+          const element = document.elementFromPoint(x as number, y as number);
+          return element?.closest('button')?.textContent ?? element?.tagName ?? null;
+        },
+        [box.x + box.width / 2, box.y + box.height / 2],
+      );
+
+      expect(onTop, `${ship} row is obscured by another element`).toContain(ship);
+    }
+  },
+);
+
+test(
+  'the action bar is reachable once the fleet is complete',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
+    await page.getByRole('button', { name: 'Auto-place' }).click();
+
+    const start = page.getByRole('button', { name: 'Start the battle' });
+    await expect(start).toBeEnabled();
+    // Clickable without any manual scrolling — Playwright fails here if it is
+    // covered or off-screen.
+    await start.click();
+
+    await expect(page.getByRole('grid', { name: /Enemy waters/i })).toBeVisible();
+  },
+);
+
+test(
+  'a cancelled drag abandons the ship instead of placing it',
+  { tag: '@core' },
+  async ({ page }) => {
+    await page.goto('/en/play/bot');
+
+    const battleship = page.getByRole('button', { name: /Battleship/ });
+    const grid = page.getByRole('grid', { name: /place your ships/i });
+    await page.evaluate(() => window.scrollBy(0, 260));
+    await page.waitForTimeout(100);
+
+    const tray = await battleship.boundingBox();
+    const board = await grid.boundingBox();
+    if (!tray || !board) throw new Error('expected a laid-out board and tray');
+    const cell = board.width / 10;
+
+    await page.mouse.move(tray.x + tray.width / 2, tray.y + tray.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(board.x + 3.5 * cell, board.y + 3.5 * cell, { steps: 8 });
+
+    // iOS fires pointercancel whenever the browser claims the gesture — a scroll,
+    // a system swipe, an incoming call. That must abandon the drag, never commit it.
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new PointerEvent('pointercancel', { bubbles: true, clientX: 0, clientY: 0 }),
+      );
+    });
+    await page.waitForTimeout(300);
+
+    // Still unplaced: no ship was committed by the cancellation.
+    await expect(battleship).toBeEnabled();
+    await expect(battleship).toContainText('1 left');
+  },
+);
+
+test('the fleet tray does not swallow vertical scrolling', { tag: '@core' }, async ({ page }) => {
+  await page.goto('/en/play/bot');
+
+  // `touch-action: none` on the tray stopped the page scrolling whenever a
+  // touch began on a tray row, and the tray covers a third of a phone screen.
+  const touchAction = await page
+    .getByRole('button', { name: /Battleship/ })
+    .evaluate((el) => getComputedStyle(el).touchAction);
+
+  expect(touchAction).not.toBe('none');
+  expect(touchAction).toContain('pan-y');
+});
+
+test(
   'places a ship by dragging it from the tray onto the grid',
   { tag: '@core' },
   async ({ page }) => {
