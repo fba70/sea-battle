@@ -8,6 +8,21 @@ import type { Coord } from '@/game/types';
 import { allCoords, coordLabel, markAt, type CellMark, type ShipOutline } from './board-model';
 import { CellGlyph, GhostHull, ShipHull, SplashRipple } from './board-marks';
 
+/**
+ * Decision: ~33px cells at the 360px floor are accepted for Phase 0 (2026-09-22).
+ *
+ * §7.1 asks for touch targets of ≥40px on mobile, but ten columns need 400px of
+ * width before labels or padding, so ≥40px is unreachable at the 360px viewport
+ * §7.10 sets as the minimum. What §7.10 actually requires as acceptance — "the
+ * full game (place, fire, win) is completable on a 360px-wide phone browser" — is
+ * met and covered by E2E on mobile viewports.
+ *
+ * Measured: ~33px at 360px, ~36px at 390px (iPhone 12+), ~38px at 412px (Pixel).
+ * All clear the WCAG 2.2 AA minimum target size of 24x24 CSS px. Touch-target
+ * sizing gets revisited in the later production/design polish pass; do not
+ * redesign the board for it now.
+ */
+
 export interface BoardInteraction {
   readonly cursor: Coord;
   readonly onCursorChange: (coord: Coord) => void;
