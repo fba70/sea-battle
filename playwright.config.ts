@@ -1,5 +1,18 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * Playwright does not read .env.local the way Next does, but the guest-session
+ * specs gate on DATABASE_URL. Without this the DB-backed tests would silently
+ * skip even on a fully configured machine.
+ */
+for (const file of ['.env.local', '.env']) {
+  try {
+    process.loadEnvFile(file);
+  } catch {
+    // Absent is fine — the specs then skip with an explicit reason.
+  }
+}
+
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 /**

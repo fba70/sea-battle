@@ -79,10 +79,21 @@ test(
   'playing a full turn with sound on produces no console errors',
   { tag: '@core' },
   async ({ page }) => {
+    /**
+     * The guest-session call legitimately fails with a 500 when no DATABASE_URL
+     * is configured, and the browser logs that failed request. Ignore only that
+     * request, and only while there is no database: with one configured the
+     * filter is inactive, so an auth error would still fail this test.
+     */
+    const noDatabase = !process.env.DATABASE_URL;
+    const isUnconfiguredAuthNoise = (url: string) => noDatabase && url.includes('/api/auth/');
+
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text());
+      if (message.type() !== 'error') return;
+      if (isUnconfiguredAuthNoise(message.location().url)) return;
+      errors.push(message.text());
     });
 
     await page.goto('/en/play/bot');

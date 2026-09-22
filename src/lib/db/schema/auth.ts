@@ -1,12 +1,12 @@
 import { boolean, pgTable, text, timestamp } from 'drizzle-orm/pg-core';
 
 /**
- * better-auth core tables only.
+ * better-auth core tables, plus the single column the anonymous plugin needs.
  *
- * These four are required for better-auth to initialise at all. Game tables
- * (users profile fields, ratings, games, badges, tournaments, cosmetics — spec §6)
- * are deliberately NOT defined yet; several of them depend on unresolved open
- * questions (e.g. OQ-1 decides whether `ratings` is keyed by user or by user+mode).
+ * These four tables are required for better-auth to initialise at all. Game
+ * tables (ratings, games, badges, tournaments, cosmetics — spec §6) are
+ * deliberately NOT defined yet; several depend on unresolved open questions
+ * (e.g. OQ-1 decides whether `ratings` is keyed by user or by user+mode).
  */
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -16,6 +16,14 @@ export const user = pgTable('user', {
     .$defaultFn(() => false)
     .notNull(),
   image: text('image'),
+  /**
+   * Spec §7.5 / §6 `users.role`: distinguishes a guest from a registered user.
+   * Written by the better-auth anonymous plugin; the guest -> account claim in
+   * Phase 1 flips it to false rather than creating a second identity.
+   */
+  // A SQL-level default keeps this migration safe to apply to a table that
+  // already holds rows.
+  isAnonymous: boolean('is_anonymous').default(false).notNull(),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),

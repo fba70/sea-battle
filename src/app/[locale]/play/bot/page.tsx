@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { BotMatchScreen } from '@/components/game/bot-match-screen';
+import { GuestSessionProvider } from '@/components/guest-session-provider';
 import type { Locale } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 
@@ -20,5 +21,15 @@ export default async function PlayBotPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   setRequestLocale(locale as Locale);
 
-  return <BotMatchScreen />;
+  return (
+    <>
+      {/*
+        Mounted on the gameplay route only: entering a game is the point at
+        which a durable identity is actually needed (spec §7.5). Public content
+        pages deliberately create nothing — see GuestSessionProvider.
+      */}
+      <GuestSessionProvider />
+      <BotMatchScreen />
+    </>
+  );
 }

@@ -1,28 +1,50 @@
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
+import { anonymous } from 'better-auth/plugins';
 
 import { db, schema } from './db';
 import { serverEnv } from './env';
 
 /**
- * Minimal better-auth setup: email + password only.
+ * The auth configuration, minus the storage adapter.
  *
- * Guest/anonymous sessions and the guest -> account claim flow (spec §7.5) are
- * deliberately not wired yet; this exists so that work has a home to land in.
+ * Kept as a builder so production (Drizzle on Neon) and the integration tests
+ * (in-memory adapter) exercise exactly the same options — there is one auth
+ * configuration, not two that can drift.
  */
-export const auth = betterAuth({
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema,
-  }),
-  secret: serverEnv.BETTER_AUTH_SECRET,
-  baseURL: serverEnv.BETTER_AUTH_URL,
-  emailAndPassword: {
-    enabled: true,
-  },
-  // nextCookies() must stay last in the plugin list.
-  plugins: [nextCookies()],
-});
+export function buildAuthOptions(
+  database: BetterAuthOptions['database'],
+  baseURL: string = serverEnv.BETTER_AUTH_URL,
+) {
+  // No explicit return type: inference has to survive so that `betterAuth()`
+  // can derive the plugin API (e.g. `api.signInAnonymous`) from these options.
+  return {
+    database,
+    secret: serverEnv.BETTER_AUTH_SECRET,
+    baseURL,
+
+    // Spec §7.5: email + password is the registration path. The UI for it is
+    // Phase 1; the endpoint existing now costs nothing and keeps the guest ->
+    // account claim a single migration away.
+    emailAndPassword: { enabled: true },
+
+    plugins: [
+      /**
+       * Spec §7.5 / §13 Phase 0: "Guest / anonymous session on first visit
+       * (better-auth anonymous plugin) so play works with zero signup".
+       *
+       * The plugin issues a real user row + session cookie with no credentials.
+       * `onLinkAccount` is where Phase 1 will migrate guest progress onto the
+       * registered account; there is nothing to carry across yet.
+       */
+      anonymous(),
+      // nextCookies() must stay last in the plugin list.
+      nextCookies(),
+    ],
+  } satisfies BetterAuthOptions;
+}
+
+export const auth = betterAuth(buildAuthOptions(drizzleAdapter(db, { provider: 'pg', schema })));
 
 export type Session = typeof auth.$Infer.Session;
