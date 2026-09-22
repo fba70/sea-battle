@@ -14,6 +14,8 @@
  * send `createPlayerView(state, slot)` (or `createPublicView(state)`) instead.
  */
 export * from './autoplace';
+// Server-side only: `codec` encodes BOTH fleets. See its module header.
+export * from './codec';
 export * from './constants';
 export * from './coord';
 export * from './fire';

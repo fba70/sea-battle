@@ -1,8 +1,8 @@
 # Server-authoritative game layer
 
-Nothing lives here yet. This directory is reserved for the code that acts as the
-**referee**: it owns board state, turn order, RNG, timers and results, and it is the
-only place allowed to see both players' boards.
+This directory holds the **referee**: the only code allowed to see both players'
+boards. It owns board state, turn order, RNG, timers and results. `session/` is the
+transport-independent core of it; the adapter that carries bytes arrives with OQ-2.
 
 Rules from `CLAUDE.md` and spec §5.3 / §10 that govern this directory:
 
@@ -12,6 +12,26 @@ Rules from `CLAUDE.md` and spec §5.3 / §10 that govern this directory:
 - All rule logic is imported from `src/game` (pure, transport-independent) rather
   than reimplemented here, so the same engine backs the UI, the bot, and the
   live session layer.
+
+## `session/` — Phase 1, Block 1 (added 2026-09-22)
+
+- `protocol.ts` — the spec §9 contract: Zod schemas for every client→server intent,
+  the server→client event types, and the session error vocabulary. Schemas validate
+  _structure only_; legality is the engine's. The §9 intent is wrapped in an envelope
+  carrying a `seq`, because §9 defines no sequencing field but §10 requires one.
+- `session.ts` — `GameSession`: owns the authoritative `GameState`, resolves a player
+  id to a seat, applies intents through `src/game`, and returns **per-recipient** §9
+  events built by `createPlayerView(state, seat)`. Pure and immutable: no clock, no
+  RNG, no I/O, so a session replays identically from its inputs.
+- `src/game/codec.ts` — makes `GameState` storable. `shots`/`revealedEmpty` are `Set`s,
+  so `JSON.stringify` silently drops them; the codec is the only safe way to persist or
+  ship authoritative state, and it re-validates fleets through `validateFleet` on decode.
+
+Not built yet, by design: timers, reconnection, resign/forfeit, reactions, matchmaking,
+rooms, ratings and persistence. Those are Blocks 5–12.
+
+An ESLint rule keeps `session/` free of sockets, realtime providers, the database and
+the UI, so the OQ-2 decision only ever costs us an adapter.
 
 The transport is still an open question (**OQ-2**: Cloudflare Durable Objects /
 PartyKit vs Upstash Redis + Ably/Pusher). Keeping the rules in `src/game` means that
