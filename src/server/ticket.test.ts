@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { mintGameTicket, verifyGameTicket, DEFAULT_TICKET_TTL_SECONDS } from './ticket';
+import { signMessage } from './hmac';
+import {
+  mintGameTicket,
+  verifyGameTicket,
+  DEFAULT_TICKET_TTL_SECONDS,
+  TICKET_PURPOSE,
+} from './ticket';
 
 const SECRET = 'a-sufficiently-long-shared-ticket-secret';
 const OTHER_SECRET = 'a-different-shared-ticket-secret-value';
@@ -99,21 +105,25 @@ describe('a ticket cannot be forged or altered', () => {
   }
 
   it('rejects a correctly signed payload that is not a ticket', async () => {
-    // Signed, but the claims are nonsense — signature alone is not enough.
+    // Signed with the right secret *and* the right purpose, but the claims are
+    // nonsense — a valid signature alone is never enough.
     const body = Buffer.from(JSON.stringify({ hello: 'world' })).toString('base64url');
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(SECRET),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
-    const signature = Buffer.from(
-      await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body)),
-    ).toString('base64url');
+    const signature = await signMessage(TICKET_PURPOSE, body, SECRET);
 
     const result = await verifyGameTicket(`${body}.${signature}`, SECRET, NOW);
     expect(!result.ok && result.error.code).toBe('invalid_claims');
+  });
+
+  it('rejects a signature minted for a different purpose', async () => {
+    // The same secret signs game-result reports. Scoping by purpose stops one kind of
+    // signed message being presented as another.
+    const body = Buffer.from(
+      JSON.stringify({ gameId: 'game-1', playerId: 'player-a', seat: 'a', exp: 1e10 }),
+    ).toString('base64url');
+    const signature = await signMessage('seaduel.some-other-purpose', body, SECRET);
+
+    const result = await verifyGameTicket(`${body}.${signature}`, SECRET, NOW);
+    expect(!result.ok && result.error.code).toBe('bad_signature');
   });
 
   it('rejects a seat that is not a or b', async () => {

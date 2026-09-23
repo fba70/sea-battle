@@ -35,6 +35,12 @@ export interface PersistedRoom {
   readonly revision: number;
   /** Last accepted client sequence per seat; -1 when nothing has been accepted. */
   readonly seq: Readonly<Record<PlayerSlot, number>>;
+  /**
+   * True once the Next app has acknowledged the finished match. Persisted so the
+   * result is reported exactly once even across hibernation, and so a failed report
+   * can be retried the next time this room wakes.
+   */
+  readonly reported: boolean;
 }
 
 export const EMPTY_ROOM = (gameId: string): PersistedRoom => ({
@@ -44,6 +50,7 @@ export const EMPTY_ROOM = (gameId: string): PersistedRoom => ({
   state: null,
   revision: 0,
   seq: { a: -1, b: -1 },
+  reported: false,
 });
 
 export function encodeRoom(room: {
@@ -51,6 +58,7 @@ export function encodeRoom(room: {
   seats: RoomSeats;
   session: GameSession | null;
   seq: Readonly<Record<PlayerSlot, number>>;
+  reported?: boolean;
 }): PersistedRoom {
   return {
     v: ROOM_STATE_VERSION,
@@ -59,6 +67,7 @@ export function encodeRoom(room: {
     state: room.session ? encodeGameState(room.session.state) : null,
     revision: room.session?.revision ?? 0,
     seq: room.seq,
+    reported: room.reported ?? false,
   };
 }
 
@@ -110,6 +119,7 @@ export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
     state: (record.state ?? null) as EncodedGameState | null,
     revision,
     seq,
+    reported: record.reported === true,
   };
 
   if (room.state === null) {

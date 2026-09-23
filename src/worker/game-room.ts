@@ -10,6 +10,8 @@ import {
   type SessionEvents,
 } from '@/server/session/session';
 import { parseClientMessage, type ServerEvent } from '@/server/session/protocol';
+import { encodeGameState } from '@/game/codec';
+import { RESULT_SIGNATURE_HEADER, signResultReport } from '@/server/result-report';
 import { verifyGameTicket } from '@/server/ticket';
 
 import {
@@ -184,6 +186,9 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     this.broadcast(outcome.events);
+
+    // Players see the result immediately; persistence and rating happen behind them.
+    await this.reportResultIfFinished();
   }
 
   override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
@@ -237,6 +242,7 @@ export class GameRoom extends DurableObject<Env> {
         a: this.session?.clients.a.lastAcceptedSeq ?? room.seq.a,
         b: this.session?.clients.b.lastAcceptedSeq ?? room.seq.b,
       },
+      reported: room.reported,
     });
 
     this.room = next;
@@ -323,6 +329,52 @@ export class GameRoom extends DurableObject<Env> {
           this.sendTo(socket, event);
         }
       }
+    }
+  }
+
+  /**
+   * Tells the Next app the match is over, exactly once (spec §5.1).
+   *
+   * The realtime layer holds no database credentials on purpose, so it signs the
+   * authoritative final state and the Next app does the writing and the rating. The
+   * `reported` flag is persisted *after* a successful acknowledgement, so a failed or
+   * dropped report is retried the next time this room wakes rather than being lost —
+   * and the receiving end is idempotent, so a duplicate is harmless either way.
+   */
+  private async reportResultIfFinished(): Promise<void> {
+    const room = this.room;
+    const session = this.session;
+
+    if (!room || !session || room.reported || session.state.phase !== 'finished') {
+      return;
+    }
+
+    const endpoint = this.env.GAME_RESULT_URL;
+    if (!endpoint) {
+      // Nothing to report to. The flag stays false so a later wake tries again.
+      return;
+    }
+
+    try {
+      const { body, signature } = await signResultReport(
+        { gameId: room.gameId, state: encodeGameState(session.state) },
+        this.env.GAME_TICKET_SECRET ?? '',
+      );
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [RESULT_SIGNATURE_HEADER]: signature },
+        body,
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      this.room = { ...room, reported: true };
+      await this.persist();
+    } catch {
+      // Left unreported on purpose; the next message or reconnect retries.
     }
   }
 

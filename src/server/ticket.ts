@@ -17,6 +17,8 @@
  */
 import type { PlayerSlot } from '@/game/types';
 
+import { base64UrlDecode, base64UrlEncode, signMessage, verifyMessage } from './hmac';
+
 /** Claims carried by a ticket. Keep this small — it is visible to the client. */
 export interface GameTicketClaims {
   readonly gameId: string;
@@ -44,45 +46,8 @@ export const DEFAULT_TICKET_TTL_SECONDS = 120;
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-function base64UrlEncode(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) {
-    binary += String.fromCharCode(byte);
-  }
-  return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
-}
-
-function base64UrlDecode(value: string): Uint8Array | null {
-  const padded = value.replaceAll('-', '+').replaceAll('_', '/');
-  try {
-    const binary = atob(padded.padEnd(Math.ceil(padded.length / 4) * 4, '='));
-    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  } catch {
-    return null;
-  }
-}
-
-async function hmacKey(secret: string): Promise<CryptoKey> {
-  return crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign', 'verify'],
-  );
-}
-
-/** Length-independent comparison, so a mismatch leaks no position information. */
-function timingSafeEqual(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) {
-    return false;
-  }
-  let difference = 0;
-  for (let index = 0; index < left.length; index += 1) {
-    difference |= (left[index] as number) ^ (right[index] as number);
-  }
-  return difference === 0;
-}
+/** Scopes the signature so a ticket can never be replayed as another signed message. */
+export const TICKET_PURPOSE = 'seaduel.game-ticket.v1';
 
 function isSeat(value: unknown): value is PlayerSlot {
   return value === 'a' || value === 'b';
@@ -109,9 +74,7 @@ export async function mintGameTicket(
   };
 
   const body = base64UrlEncode(encoder.encode(JSON.stringify(payload)));
-  const signature = await crypto.subtle.sign('HMAC', await hmacKey(secret), encoder.encode(body));
-
-  return `${body}.${base64UrlEncode(new Uint8Array(signature))}`;
+  return `${body}.${await signMessage(TICKET_PURPOSE, body, secret)}`;
 }
 
 /**
@@ -133,15 +96,7 @@ export async function verifyGameTicket(
   }
 
   const body = token.slice(0, separator);
-  const provided = base64UrlDecode(token.slice(separator + 1));
-  if (!provided) {
-    return { ok: false, error: { code: 'malformed', message: 'Ticket is not well formed' } };
-  }
-
-  const expected = new Uint8Array(
-    await crypto.subtle.sign('HMAC', await hmacKey(secret), encoder.encode(body)),
-  );
-  if (!timingSafeEqual(provided, expected)) {
+  if (!(await verifyMessage(TICKET_PURPOSE, body, token.slice(separator + 1), secret))) {
     return { ok: false, error: { code: 'bad_signature', message: 'Ticket signature is invalid' } };
   }
 

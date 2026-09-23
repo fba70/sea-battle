@@ -4,6 +4,12 @@ const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(32, 'BETTER_AUTH_SECRET must be at least 32 characters'),
   BETTER_AUTH_URL: z.string().url(),
+  /**
+   * Shared with the realtime Worker (spec §5.2). Signs connection tickets going out
+   * and verifies game-result reports coming back. Must match GAME_TICKET_SECRET in
+   * the Worker's own env — see .env.worker.example.
+   */
+  GAME_TICKET_SECRET: z.string().min(32, 'GAME_TICKET_SECRET must be at least 32 characters'),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -18,6 +24,7 @@ const developmentFallbacks: ServerEnv = {
     'postgresql://user:password@ep-placeholder-000000.eu-central-1.aws.neon.tech/seaduel?sslmode=require',
   BETTER_AUTH_SECRET: 'development-only-insecure-secret-please-replace-me',
   BETTER_AUTH_URL: 'http://localhost:3000',
+  GAME_TICKET_SECRET: 'development-only-insecure-ticket-secret-please-replace',
 };
 
 /**

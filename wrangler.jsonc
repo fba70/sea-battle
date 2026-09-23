@@ -17,6 +17,10 @@
   // `new_classes` — that selects the KV-backed backend, which requires a paid plan.
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
 
+  // Where finished matches are reported. The realtime layer has no database binding
+  // by design — the Next app owns Neon and does the writing (spec §5.1).
+  "vars": { "GAME_RESULT_URL": "http://localhost:3000/api/game/result" },
+
   "observability": { "enabled": true },
 
   // GAME_TICKET_SECRET is a secret, not a var: set it with
