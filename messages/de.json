@@ -237,5 +237,62 @@
     },
     "cta": "Gegen den Bot spielen",
     "rulesLink": "Spielanleitung lesen"
+  },
+  "multiplayer": {
+    "hub": {
+      "title": "Spielen",
+      "subtitle": "Wähle, wie du spielen möchtest.",
+      "bot": "Gegen den Computer spielen",
+      "botHint": "Übe offline gegen drei Schwierigkeitsgrade. Nie gewertet.",
+      "quick": "Schnelles Spiel",
+      "quickHint": "Werde mit einer anderen wartenden Person zusammengebracht.",
+      "room": "Gegen Freunde spielen",
+      "roomHint": "Erstelle einen privaten Raum und teile den Code oder den Link."
+    },
+    "room": {
+      "title": "Privater Raum",
+      "create": "Raum erstellen",
+      "creating": "Raum wird erstellt…",
+      "joinTitle": "Mit Code beitreten",
+      "codeInput": "Raumcode",
+      "codePlaceholder": "z. B. BCDF23",
+      "join": "Beitreten",
+      "joining": "Trete bei…",
+      "codeLabel": "Raumcode:",
+      "share": "Teile diesen Link mit deinem Gegenüber:",
+      "copy": "Link kopieren",
+      "copied": "Kopiert",
+      "waiting": "Warte darauf, dass dein Gegenüber beitritt…",
+      "errors": {
+        "invalid_code": "Dieser Code sieht nicht richtig aus.",
+        "room_not_found": "Kein Raum mit diesem Code.",
+        "room_full": "In diesem Raum spielen bereits zwei Personen.",
+        "already_finished": "Dieses Spiel ist bereits beendet.",
+        "not_signed_in": "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut.",
+        "unknown": "Etwas ist schiefgelaufen. Versuche es erneut."
+      }
+    },
+    "quick": {
+      "title": "Schnelles Spiel",
+      "start": "Gegner suchen",
+      "searching": "Suche nach einem Gegner…",
+      "cancel": "Abbrechen",
+      "poolRated": "Du stehst für ein gewertetes Spiel in der Warteschlange.",
+      "poolUnrated": "Du stehst für ein ungewertetes Spiel in der Warteschlange. Registriere dich für gewertete Spiele.",
+      "matched": "Gegner gefunden — das Spiel beginnt."
+    },
+    "live": {
+      "title": "Live-Partie",
+      "connecting": "Verbinde…",
+      "connected": "Verbunden",
+      "reconnecting": "Verbinde neu…",
+      "failed": "Verbindung fehlgeschlagen. Lade die Seite neu.",
+      "waitingForOpponent": "Warte auf dein Gegenüber…",
+      "waitingHint": "Die Partie startet, sobald beide verbunden sind.",
+      "confirmFleet": "Flotte bestätigen",
+      "waitingForFleet": "Flotte bestätigt. Warte darauf, dass dein Gegenüber seine platziert…",
+      "rejected": "Der Server hat das abgelehnt: {reason}.",
+      "dismiss": "Schließen"
+    }
   }
 }

@@ -237,5 +237,62 @@
     },
     "cta": "Play against the bot",
     "rulesLink": "Read how to play"
+  },
+  "multiplayer": {
+    "hub": {
+      "title": "Play",
+      "subtitle": "Choose how you want to play.",
+      "bot": "Play against the computer",
+      "botHint": "Practise offline against three difficulty levels. Never rated.",
+      "quick": "Quick match",
+      "quickHint": "Get paired with another player who is waiting.",
+      "room": "Play with a friend",
+      "roomHint": "Create a private room and share the code or link."
+    },
+    "room": {
+      "title": "Private room",
+      "create": "Create a room",
+      "creating": "Creating room…",
+      "joinTitle": "Join with a code",
+      "codeInput": "Room code",
+      "codePlaceholder": "e.g. BCDF23",
+      "join": "Join",
+      "joining": "Joining…",
+      "codeLabel": "Room code:",
+      "share": "Share this link with your friend:",
+      "copy": "Copy link",
+      "copied": "Copied",
+      "waiting": "Waiting for your friend to join…",
+      "errors": {
+        "invalid_code": "That code does not look right.",
+        "room_not_found": "No room with that code.",
+        "room_full": "That room already has two players.",
+        "already_finished": "That game has already finished.",
+        "not_signed_in": "Your session expired. Reload the page and try again.",
+        "unknown": "Something went wrong. Try again."
+      }
+    },
+    "quick": {
+      "title": "Quick match",
+      "start": "Find an opponent",
+      "searching": "Looking for an opponent…",
+      "cancel": "Cancel",
+      "poolRated": "You are queued for a rated match.",
+      "poolUnrated": "You are queued for an unrated match. Register to play rated games.",
+      "matched": "Opponent found — starting the match."
+    },
+    "live": {
+      "title": "Live match",
+      "connecting": "Connecting…",
+      "connected": "Connected",
+      "reconnecting": "Reconnecting…",
+      "failed": "Could not connect. Reload to try again.",
+      "waitingForOpponent": "Waiting for your opponent…",
+      "waitingHint": "The match starts as soon as both players are connected.",
+      "confirmFleet": "Confirm fleet",
+      "waitingForFleet": "Fleet confirmed. Waiting for your opponent to place theirs…",
+      "rejected": "The server rejected that: {reason}.",
+      "dismiss": "Dismiss"
+    }
   }
 }

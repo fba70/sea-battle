@@ -8,6 +8,8 @@ const eslintConfig = [
       '.next/**',
       'node_modules/**',
       'drizzle/**',
+      // wrangler/miniflare scratch bundles — generated, and not ours to lint.
+      '.wrangler/**',
       'coverage/**',
       'playwright-report/**',
       'test-results/**',

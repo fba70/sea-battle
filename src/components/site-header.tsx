@@ -34,6 +34,12 @@ export async function SiteHeader() {
           className="col-span-2 col-start-1 row-start-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:col-span-1 sm:row-start-1"
         >
           <Link
+            href="/play"
+            className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            {t('nav.play')}
+          </Link>
+          <Link
             href="/how-to-play"
             className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >

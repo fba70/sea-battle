@@ -11,6 +11,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -126,6 +127,13 @@ export const games = pgTable(
      */
     botLevel: text('bot_level'),
 
+    /**
+     * Spec §7.4: the short code behind `/play/room/<code>`. Present only on private
+     * rooms, and only until the game is over — a completed room keeps its code so the
+     * URL stays meaningful in history, but joining checks the empty seat, not the code.
+     */
+    joinCode: text('join_code'),
+
     winnerId: text('winner_id').references(() => user.id, { onDelete: 'set null' }),
     resultReason: text('result_reason'),
 
@@ -159,6 +167,15 @@ export const games = pgTable(
     // Spec §6: "games(player_a_id/player_b_id, ended_at) for history".
     index('games_player_a_ended_at_idx').on(table.playerAId, table.endedAt),
     index('games_player_b_ended_at_idx').on(table.playerBId, table.endedAt),
+
+    // A room code addresses exactly one game while it is joinable. Unique rather than
+    // merely indexed, so two rooms can never collide on the same code.
+    uniqueIndex('games_join_code_key').on(table.joinCode),
+
+    check(
+      'games_join_code_shape',
+      sql`"join_code" is null or ("type" = 'private' and "join_code" ~ '^[A-Z0-9]{4,12}$')`,
+    ),
 
     check('games_mode_valid', oneOf('mode', GAME_MODES)),
     check('games_type_valid', oneOf('type', GAME_TYPES)),
@@ -285,3 +302,45 @@ export type GameRow = typeof games.$inferSelect;
 export type NewGameRow = typeof games.$inferInsert;
 export type RatingRow = typeof ratings.$inferSelect;
 export type NewRatingRow = typeof ratings.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// matchmaking_queue
+// ---------------------------------------------------------------------------
+
+/** Spec §4 / OQ-6: guests play in their own pool and are never rated. */
+export const MATCH_POOLS = ['rated', 'unrated'] as const;
+export type MatchPool = (typeof MATCH_POOLS)[number];
+
+/**
+ * Players waiting for a quick match (spec §7.4).
+ *
+ * Spec §5.2 puts this in Redis. Postgres carries it here instead: the pairing has to
+ * be atomic ("two matchers can't grab the same player"), and a single `DELETE ...
+ * RETURNING` that removes both rows or neither gives exactly that guarantee with a
+ * service we already run. The shape is deliberately Redis-friendly — a pool key, a
+ * rating to sort on, and an enqueue time — so §5.2's sorted set can replace it later
+ * without touching the callers.
+ *
+ * One row per player, so a player can never be waiting in two pools at once.
+ */
+export const matchmakingQueue = pgTable(
+  'matchmaking_queue',
+  {
+    userId: text('user_id')
+      .primaryKey()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    pool: text('pool').notNull(),
+    mode: text('mode').notNull().default('classic'),
+    /** Snapshot of the player's rating, for the widening window spec §7.4 describes. */
+    rating: doublePrecision('rating').notNull().default(1500),
+    enqueuedAt: timestamp('enqueued_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // The matcher scans one pool in arrival order.
+    index('matchmaking_queue_pool_enqueued_idx').on(table.pool, table.enqueuedAt),
+    check('matchmaking_queue_pool_valid', oneOf('pool', MATCH_POOLS)),
+    check('matchmaking_queue_mode_valid', oneOf('mode', GAME_MODES)),
+  ],
+);
+
+export type QueueRow = typeof matchmakingQueue.$inferSelect;
