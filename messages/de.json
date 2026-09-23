@@ -15,8 +15,7 @@
     "title": "Versenke die Flotte.",
     "subtitle": "Stelle deine Flotte auf, überliste den Bot und versenke alle zehn Schiffe.",
     "playVsBot": "Gegen den Bot spielen",
-    "playVsFriend": "Gegen Freunde spielen",
-    "comingSoon": "Bald",
+    "playOnline": "Online spielen",
     "facts": {
       "board": "10 x 10 Spielfeld, zehn Schiffe",
       "rules": "Klassische Regeln — ein Treffer bringt einen weiteren Schuss",
@@ -240,14 +239,15 @@
   },
   "multiplayer": {
     "hub": {
-      "title": "Spielen",
-      "subtitle": "Wähle, wie du spielen möchtest.",
-      "bot": "Gegen den Computer spielen",
-      "botHint": "Übe offline gegen drei Schwierigkeitsgrade. Nie gewertet.",
+      "title": "Online spielen",
+      "subtitle": "Tritt in Echtzeit gegen eine andere Person an. Deine Flotte bleibt verborgen — der Server ist der Schiedsrichter.",
       "quick": "Schnelles Spiel",
-      "quickHint": "Werde mit einer anderen wartenden Person zusammengebracht.",
-      "room": "Gegen Freunde spielen",
-      "roomHint": "Erstelle einen privaten Raum und teile den Code oder den Link."
+      "quickHint": "Wir bringen dich mit einer anderen wartenden Person zusammen. Keine Vorbereitung nötig.",
+      "quickAction": "Gegner suchen",
+      "room": "Privates Spiel",
+      "roomHint": "Erstelle einen Raum und teile den Code oder Link mit jemandem, den du kennst.",
+      "roomAction": "Raum erstellen oder beitreten",
+      "note": "Gastspiele werden nicht gewertet. Beide Varianten starten mit der Flottenaufstellung, sobald dein Gegenüber beitritt."
     },
     "room": {
       "title": "Privater Raum",

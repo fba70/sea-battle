@@ -40,14 +40,9 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
               <Link href="/play/bot">{t('landing.playVsBot')}</Link>
             </Button>
 
-            <div className="flex items-center gap-2">
-              <Button size="lg" variant="outline" disabled>
-                {t('landing.playVsFriend')}
-              </Button>
-              <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">
-                {t('landing.comingSoon')}
-              </span>
-            </div>
+            <Button size="lg" variant="outline" asChild>
+              <Link href="/play">{t('landing.playOnline')}</Link>
+            </Button>
           </div>
 
           <Link

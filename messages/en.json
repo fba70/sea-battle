@@ -15,8 +15,7 @@
     "title": "Sink the fleet.",
     "subtitle": "Place your fleet, out-think the bot, and sink all ten ships.",
     "playVsBot": "Play against the bot",
-    "playVsFriend": "Play a friend",
-    "comingSoon": "Soon",
+    "playOnline": "Play online",
     "facts": {
       "board": "10 x 10 board, ten ships",
       "rules": "Classic rules — a hit earns another shot",
@@ -240,14 +239,15 @@
   },
   "multiplayer": {
     "hub": {
-      "title": "Play",
-      "subtitle": "Choose how you want to play.",
-      "bot": "Play against the computer",
-      "botHint": "Practise offline against three difficulty levels. Never rated.",
-      "quick": "Quick match",
-      "quickHint": "Get paired with another player who is waiting.",
-      "room": "Play with a friend",
-      "roomHint": "Create a private room and share the code or link."
+      "title": "Play online",
+      "subtitle": "Take on another person in real time. Your fleet stays hidden — the server is the referee.",
+      "quick": "Quick Match",
+      "quickHint": "We pair you with another player who is waiting. Nothing to set up.",
+      "quickAction": "Find an opponent",
+      "room": "Private Game",
+      "roomHint": "Create a room and share the code or link with someone you know.",
+      "roomAction": "Create or join a room",
+      "note": "Guest games are unrated. Both flows start with fleet placement once your opponent joins."
     },
     "room": {
       "title": "Private room",
