@@ -30,9 +30,13 @@ yarn-error.log*
 .env.vercel
 .env*.local
 !.env.example
+!.env.worker.example
 
 # vercel
 .vercel
+
+# cloudflare workers local state (miniflare/wrangler)
+.wrangler
 
 # typescript
 *.tsbuildinfo

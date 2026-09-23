@@ -13,11 +13,11 @@
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/worker/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "generate:sfx": "node scripts/generate-sfx.mjs",
-    "test": "vitest run",
+    "test": "vitest run && npm run test:workers",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:no-webkit": "PLAYWRIGHT_SKIP_WEBKIT=1 playwright test",
@@ -25,7 +25,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.mjs",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test:workers": "vitest run --config vitest.workers.config.ts",
+    "worker:dev": "wrangler dev --env-file .env.worker",
+    "worker:typecheck": "tsc --noEmit -p src/worker/tsconfig.json",
+    "worker:deploy": "wrangler deploy --env-file .env.worker",
+    "worker:build": "wrangler deploy --dry-run --outdir .wrangler/dry-run"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -45,6 +50,8 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260923.1",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/howler": "^2.2.13",
@@ -58,6 +65,7 @@
     "prettier": "^3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "6.0.3",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.136.3"
   }
 }

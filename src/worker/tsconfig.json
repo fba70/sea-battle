@@ -1,0 +1,19 @@
+{
+  // The Worker runs on workerd, not in a browser and not in Node. Pulling the DOM lib
+  // in here would merge DOM's globals with Cloudflare's — `WebSocket.binaryType` would
+  // typecheck and then be undefined at runtime. This config gives the worker only the
+  // types it actually has.
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "noEmit": true
+  },
+  "include": [
+    "./**/*.ts",
+    "./**/*.d.ts",
+    "../game/**/*.ts",
+    "../server/**/*.ts",
+    "../rating/**/*.ts"
+  ]
+}

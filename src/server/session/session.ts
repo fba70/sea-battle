@@ -139,6 +139,37 @@ export function resumeSession(options: {
   };
 }
 
+/**
+ * Restores per-player replay protection after the session was rebuilt from storage.
+ *
+ * `resumeSession` deliberately starts sequencing fresh, which is right when a *client*
+ * reconnects. It is wrong when the *server* restarts underneath a still-connected
+ * client — a hibernating Durable Object, say — because a client that had `seq = 5`
+ * accepted could then resend it and have it applied a second time (spec §10).
+ *
+ * `lastEvents` is seeded with each seat's current snapshot rather than the original
+ * cached events, which are not worth persisting per move. A replayed intent therefore
+ * answers with the authoritative state as it stands, which is at least as correct as
+ * the stale response it originally produced, and the important part holds: the intent
+ * is not applied again.
+ */
+export function restoreSequencing(
+  session: GameSession,
+  lastAcceptedSeq: Readonly<Record<PlayerSlot, number>>,
+): GameSession {
+  const snapshots: SessionEvents = forEachSeat<readonly ServerEvent[]>((seat) => [
+    snapshotFor(session, seat),
+  ]);
+
+  return {
+    ...session,
+    clients: forEachSeat((seat) => ({
+      lastAcceptedSeq: lastAcceptedSeq[seat],
+      lastEvents: lastAcceptedSeq[seat] >= 0 ? snapshots : null,
+    })),
+  };
+}
+
 /** The seat this player holds, or null if they are not in this game (spec §10). */
 export function seatOf(session: GameSession, playerId: string): PlayerSlot | null {
   if (playerId === session.seats.a) {

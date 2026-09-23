@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "seaduel-game",
+  "main": "src/worker/index.ts",
+  // Kept at or below the workerd build bundled with @cloudflare/vitest-pool-workers,
+  // so the local test runtime can start. Nothing here needs a newer date: Durable
+  // Object hibernation and WebSocketPair long predate it.
+  "compatibility_date": "2026-08-01",
+
+  // Durable Objects: one authoritative actor per live game (spec §5.1, OQ-2).
+  "durable_objects": {
+    "bindings": [{ "name": "GAME_ROOM", "class_name": "GameRoom" }],
+  },
+
+  // `new_sqlite_classes` is the SQLite-backed Durable Object storage backend, which is
+  // the one available on the Workers Free plan. Do not change this to
+  // `new_classes` — that selects the KV-backed backend, which requires a paid plan.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
+
+  "observability": { "enabled": true },
+
+  // GAME_TICKET_SECRET is a secret, not a var: set it with
+  //   npx wrangler secret put GAME_TICKET_SECRET
+  // It must match the value the Next app mints tickets with. Never commit it.
+}

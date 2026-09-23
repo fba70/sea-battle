@@ -9,3 +9,6 @@ package-lock.json
 # Specifications are the source of truth and must not be reformatted (CLAUDE.md).
 specs
 CLAUDE.md
+
+# dotenv template: prettier has no parser for it
+.env.worker.example

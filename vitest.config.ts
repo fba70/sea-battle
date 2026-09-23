@@ -7,7 +7,8 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
     // e2e/ is Playwright's; keep the two runners from fighting over the same files.
-    exclude: ['node_modules/**', '.next/**', 'e2e/**'],
+    // *.worker.test.ts needs the Workers runtime — see vitest.workers.config.ts.
+    exclude: ['node_modules/**', '.next/**', 'e2e/**', 'src/worker/**/*.worker.test.ts'],
   },
   resolve: {
     alias: {
