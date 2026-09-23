@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
+import { ensureGuestSession } from '@/lib/guest-session';
 import { useRouter } from '@/i18n/navigation';
 
 /** Create a private room, or join one by code (spec §7.4). */
@@ -17,6 +18,11 @@ export function RoomLobby() {
     setBusy('create');
     setError(null);
     try {
+      // GuestSessionProvider blocks nothing, so on a fresh browser this request can
+      // beat the anonymous sign-in and come back 401 — which reads as "your session
+      // expired". `ensureGuestSession` reuses an existing session, so this is cheap.
+      await ensureGuestSession();
+
       const response = await fetch('/api/room', { method: 'POST' });
       if (!response.ok) {
         setError(((await response.json()) as { error?: string }).error ?? 'unknown');

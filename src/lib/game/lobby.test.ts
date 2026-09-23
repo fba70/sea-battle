@@ -87,6 +87,12 @@ function fakeStore(options: { collisions?: number } = {}) {
       return { gameId: id };
     },
     findSeat: async () => null,
+    findActiveMatch: async (playerId) => {
+      const found = [...matches]
+        .reverse()
+        .find((m) => m.playerAId === playerId || m.playerBId === playerId);
+      return found ? { gameId: found.id, seat: found.playerAId === playerId ? 'a' : 'b' } : null;
+    },
   };
 
   return { store, rooms, queue, matches };
@@ -223,6 +229,23 @@ describe('private rooms (spec §7.4)', () => {
     });
   }
 
+  it('seats a player whose own concurrent request won the race', async () => {
+    // Two in-flight joins from one client: the loser used to be told the room was
+    // full even though it had just been seated.
+    const { store } = fakeStore();
+    const room = await createRoom(store, HOST);
+
+    const [first, second] = await Promise.all([
+      joinRoom(store, FRIEND, room.code),
+      joinRoom(store, FRIEND, room.code),
+    ]);
+
+    expect(first.ok, 'first request').toBe(true);
+    expect(second.ok, 'second request').toBe(true);
+    expect(first.ok && first.seating.seat).toBe('b');
+    expect(second.ok && second.seating.seat).toBe('b');
+  });
+
   it('refuses a room whose game already finished', async () => {
     const { store, rooms } = fakeStore();
     const room = await createRoom(store, HOST);
@@ -285,6 +308,33 @@ describe('quick match (spec §7.4)', () => {
     expect(matches).toHaveLength(1);
     const seated = new Set([matches[0]?.playerAId, matches[0]?.playerBId]);
     expect(seated.size).toBe(2);
+  });
+
+  it('tells the paired player about the game on their next poll', async () => {
+    // Pairing removes both players from the queue, but only the matcher learns the
+    // result from its own call — the other is still polling and must be told.
+    const { store, matches } = fakeStore();
+    await quickMatch(store, HOST);
+    const matcher = await quickMatch(store, FRIEND);
+    expect(matcher.status).toBe('matched');
+
+    const waiting = await quickMatch(store, HOST);
+    expect(waiting.status).toBe('matched');
+    expect(waiting.status === 'matched' && waiting.seating.gameId).toBe(matches[0]?.id);
+    // And it must not have created a second game for them.
+    expect(matches).toHaveLength(1);
+  });
+
+  it('does not re-queue a player who is already in a game', async () => {
+    const { store, queue, matches } = fakeStore();
+    await quickMatch(store, HOST);
+    await quickMatch(store, FRIEND);
+
+    await quickMatch(store, HOST);
+    await quickMatch(store, FRIEND);
+
+    expect(queue.size).toBe(0);
+    expect(matches).toHaveLength(1);
   });
 
   it('keeps polling harmless — a lone player stays queued, not dropped', async () => {

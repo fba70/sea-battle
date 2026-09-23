@@ -80,6 +80,7 @@ export function CellGlyph({
   return (
     <motion.g {...animation} style={{ transformOrigin: `${cx}px ${cy}px` }}>
       <rect
+        data-hull="ghost"
         x={coord.x + 0.06}
         y={coord.y + 0.06}
         width={0.88}
@@ -125,6 +126,7 @@ export function ShipHull({
 
   return (
     <motion.rect
+      data-hull="ship"
       initial={reduceMotion ? false : { opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={reduceMotion ? { duration: 0 } : SPRING}

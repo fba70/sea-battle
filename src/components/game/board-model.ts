@@ -83,3 +83,13 @@ export function clampToBoard(coord: Coord): Coord {
     y: Math.min(BOARD_SIZE - 1, Math.max(0, coord.y)),
   };
 }
+
+/**
+ * The message key describing a cell state, e.g. `cell.knownEmpty`.
+ *
+ * `CellMark` is kebab-case because it is a rendering concern; the message catalog is
+ * camelCase. Shared by every board so the two screens cannot drift apart.
+ */
+export function cellStateKey(mark: CellMark): string {
+  return mark === 'known-empty' ? 'knownEmpty' : mark;
+}

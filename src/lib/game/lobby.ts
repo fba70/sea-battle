@@ -95,6 +95,15 @@ export interface LobbyStore {
 
   /** A game this player already holds a seat in, if any. */
   findSeat(input: { gameId: string; playerId: string }): Promise<Seating | null>;
+
+  /**
+   * The most recent unfinished quick match this player is seated in.
+   *
+   * Pairing removes both players from the queue, but only the matcher learns the
+   * result from its own call — the other player is still polling. This is how they
+   * find out.
+   */
+  findActiveMatch(playerId: string): Promise<Seating | null>;
 }
 
 /** Spec §4: guests are never rated, so they queue in their own pool. */
@@ -165,11 +174,29 @@ export async function joinRoom(
   // Conditional on the seat still being empty, so two people opening the link at the
   // same moment cannot both become player B.
   const claimed = await store.claimSecondSeat({ gameId: room.gameId, playerId: player.id });
-  if (!claimed) {
-    return { ok: false, reason: 'room_full' };
+  if (claimed) {
+    return { ok: true, seating: { gameId: claimed.gameId, seat: 'b', code, ready: true } };
   }
 
-  return { ok: true, seating: { gameId: claimed.gameId, seat: 'b', code, ready: true } };
+  /**
+   * The seat was filled between the read above and the claim — but not necessarily by
+   * someone else. A single client can have two requests in flight (React mounts
+   * effects twice in development, and a reconnecting page retries), and the loser of
+   * that race used to be told the room was full even though it had just been seated.
+   * Re-read before refusing.
+   */
+  const settled = await store.findRoomByCode(code);
+  if (settled?.playerAId === player.id) {
+    return {
+      ok: true,
+      seating: { gameId: settled.gameId, seat: 'a', code, ready: settled.playerBId !== null },
+    };
+  }
+  if (settled?.playerBId === player.id) {
+    return { ok: true, seating: { gameId: settled.gameId, seat: 'b', code, ready: true } };
+  }
+
+  return { ok: false, reason: 'room_full' };
 }
 
 /**
@@ -188,6 +215,18 @@ export async function quickMatch(
   player: LobbyPlayer,
 ): Promise<QuickMatchResult> {
   const pool = poolFor(player);
+
+  /**
+   * Were we paired since the last poll?
+   *
+   * `takePair` removes both players from the queue, but only the caller that won the
+   * race gets the result. Without this check the other player would re-queue on every
+   * poll and never discover the game that was created for them.
+   */
+  const alreadyMatched = await store.findActiveMatch(player.id);
+  if (alreadyMatched) {
+    return { status: 'matched', seating: alreadyMatched };
+  }
 
   await store.enqueue({ playerId: player.id, pool, rating: player.rating });
 

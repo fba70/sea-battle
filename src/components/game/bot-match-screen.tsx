@@ -12,7 +12,14 @@ import { createRng } from '@/game/rng';
 import type { Coord, ShipPlacement } from '@/game/types';
 import type { CellMark } from './board-model';
 import { FLEET_SHIP_COUNT } from '@/game/constants';
-import { coordLabel, opponentMarks, opponentOutlines, ownMarks, ownOutlines } from './board-model';
+import {
+  cellStateKey,
+  coordLabel,
+  opponentMarks,
+  opponentOutlines,
+  ownMarks,
+  ownOutlines,
+} from './board-model';
 import { Board } from './board';
 import { DifficultyPicker } from './difficulty-picker';
 import { FleetTray } from './fleet-tray';
@@ -155,12 +162,12 @@ export function BotMatchScreen() {
     const canFire = !placing && !finished && !awaitingBot && mark === 'water';
     return t(canFire ? 'cell.fireAt' : 'cell.state', {
       cell: coordLabel(coord),
-      state: t(`cell.${mark === 'water' ? 'unknown' : toKey(mark)}`),
+      state: t(`cell.${mark === 'water' ? 'unknown' : cellStateKey(mark)}`),
     });
   };
 
   const describeOwnCell = (coord: Coord, mark: CellMark) =>
-    t('cell.state', { cell: coordLabel(coord), state: t(`cell.${toKey(mark)}`) });
+    t('cell.state', { cell: coordLabel(coord), state: t(`cell.${cellStateKey(mark)}`) });
 
   // Placement re-uses the "own" board: the draft fleet is drawn from the local
   // draft, not from the view, because it has not been submitted yet.
@@ -395,10 +402,6 @@ export function BotMatchScreen() {
       ) : null}
     </div>
   );
-}
-
-function toKey(mark: CellMark): string {
-  return mark === 'known-empty' ? 'knownEmpty' : mark;
 }
 
 /**

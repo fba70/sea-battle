@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
 
 import { db as defaultDb } from '../db';
 import { games, matchmakingQueue, CLASSIC_RULESET } from '../db/schema/game';
@@ -9,6 +9,20 @@ type Database = typeof defaultDb;
 
 /** Postgres rejects a duplicate room code with this SQLSTATE. */
 const UNIQUE_VIOLATION = '23505';
+
+/**
+ * How long a queue row stays eligible for pairing.
+ *
+ * A waiting client re-posts every couple of seconds, and each post refreshes the row,
+ * so anyone actually waiting is always fresh. A closed tab stops refreshing and drops
+ * out of consideration — without this, a player who walked away stayed in the queue
+ * forever and the next arrival was paired with a ghost who would never connect.
+ *
+ * Trade-off: `enqueued_at` doubles as the heartbeat, so queue order becomes
+ * least-recently-seen rather than first-come. That is invisible at this scale, and
+ * spec §7.4's widening rating window would want its own column anyway.
+ */
+const QUEUE_STALE_AFTER = '15 seconds';
 
 function isUniqueViolation(error: unknown): boolean {
   return typeof error === 'object' && error !== null && 'code' in error
@@ -81,15 +95,15 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
     },
 
     async enqueue({ playerId, pool, rating }) {
-      // One row per player, so nobody can wait in two pools at once. Re-queueing
-      // refreshes the pool and rating but deliberately keeps the original
-      // `enqueued_at`, so polling does not reset a player's place in the line.
+      // One row per player, so nobody can wait in two pools at once. Re-posting also
+      // refreshes `enqueued_at`, which is what keeps a waiting player visible — see
+      // QUEUE_STALE_AFTER.
       await database
         .insert(matchmakingQueue)
         .values({ userId: playerId, pool, rating })
         .onConflictDoUpdate({
           target: matchmakingQueue.userId,
-          set: { pool, rating },
+          set: { pool, rating, enqueuedAt: new Date() },
         });
     },
 
@@ -109,6 +123,7 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
           from ${matchmakingQueue}
           where ${matchmakingQueue.pool} = ${pool}
             and ${matchmakingQueue.userId} <> ${playerId}
+            and ${matchmakingQueue.enqueuedAt} > now() - interval '${sql.raw(QUEUE_STALE_AFTER)}'
           order by ${matchmakingQueue.enqueuedAt} asc
           limit 1
         ),
@@ -164,6 +179,29 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
         throw new Error('failed to create match');
       }
       return { gameId: row.id };
+    },
+
+    async findActiveMatch(playerId: string): Promise<Seating | null> {
+      // Most recent first: a player who abandoned an older game and queued again
+      // should land in the newer one.
+      const rows = await database
+        .select({ id: games.id, playerAId: games.playerAId, playerBId: games.playerBId })
+        .from(games)
+        .where(
+          and(
+            eq(games.type, 'quickmatch'),
+            eq(games.status, 'live'),
+            or(eq(games.playerAId, playerId), eq(games.playerBId, playerId)),
+          ),
+        )
+        .orderBy(desc(games.startedAt))
+        .limit(1);
+
+      const row = rows[0];
+      if (!row) {
+        return null;
+      }
+      return { gameId: row.id, seat: row.playerAId === playerId ? 'a' : 'b' };
     },
 
     async findSeat({ gameId, playerId }): Promise<Seating | null> {

@@ -4,11 +4,20 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 import { autoPlaceFleet } from '@/game/autoplace';
+import { cellsOfPlacement } from '@/game/placement';
 import { createRng } from '@/game/rng';
 import type { Coord } from '@/game/types';
 
 import { Board } from './board';
-import { coordLabel, opponentMarks, opponentOutlines, ownMarks, ownOutlines } from './board-model';
+import {
+  cellStateKey,
+  coordLabel,
+  opponentMarks,
+  opponentOutlines,
+  ownMarks,
+  ownOutlines,
+  type CellMark,
+} from './board-model';
 import { FleetTray } from './fleet-tray';
 import { TurnBanner, type BannerState } from './status-panel';
 import { useFleetPlacement } from './use-fleet-placement';
@@ -37,33 +46,45 @@ export function LiveMatchScreen({
   const [draft, actions] = useFleetPlacement();
   const [submitted, setSubmitted] = useState(false);
   const [autoPlaceCount, setAutoPlaceCount] = useState(0);
+  const [targetCursor, setTargetCursor] = useState<Coord>({ x: 0, y: 0 });
 
   const view = match.view;
   const phase = view?.phase ?? 'placement';
   // The server decides whose turn it is; this is only how it is displayed.
   const myTurn = view?.isYourTurn ?? false;
+  const canFire = phase === 'playing' && myTurn;
 
   const ownGrid = useMemo(() => (view ? ownMarks(view) : null), [view]);
   const opponentGrid = useMemo(() => (view ? opponentMarks(view) : null), [view]);
 
-  const placementMarks = useMemo(() => {
-    const grid: ReturnType<typeof ownMarks> = Array.from({ length: 10 }, () =>
-      Array.from({ length: 10 }, () => 'water' as const),
-    );
-    for (const placement of draft.placements) {
-      const horizontal = placement.orientation === 'horizontal';
-      const size = { battleship: 4, cruiser: 3, destroyer: 2, submarine: 1 }[placement.shipClass];
-      for (let offset = 0; offset < size; offset += 1) {
-        const x = placement.origin.x + (horizontal ? offset : 0);
-        const y = placement.origin.y + (horizontal ? 0 : offset);
-        const row = grid[y];
-        if (row) {
-          row[x] = 'ship';
-        }
-      }
-    }
-    return grid;
-  }, [draft.placements]);
+  /**
+   * The draft fleet is drawn as ship outlines, exactly as the bot screen does it.
+   * The board renders a `ship` mark as nothing at all — hulls come from `outlines` —
+   * so passing the draft as marks would place ships that stayed invisible.
+   */
+  const draftOutlines = useMemo(
+    () =>
+      draft.placements.map((placement, index) => ({
+        id: `draft-${index}`,
+        cells: cellsOfPlacement(placement),
+        sunk: false,
+      })),
+    [draft.placements],
+  );
+
+  const emptyMarks = useMemo<CellMark[][]>(
+    () => Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => 'water' as const)),
+    [],
+  );
+
+  const describeOwnCell = (coord: Coord, mark: CellMark) =>
+    t('cell.state', { cell: coordLabel(coord), state: t(`cell.${cellStateKey(mark)}`) });
+
+  const describeTargetCell = (coord: Coord, mark: CellMark) =>
+    t(canFire && mark === 'water' ? 'cell.fireAt' : 'cell.state', {
+      cell: coordLabel(coord),
+      state: t(`cell.${mark === 'water' ? 'unknown' : cellStateKey(mark)}`),
+    });
 
   const banner: BannerState =
     phase === 'finished'
@@ -99,28 +120,29 @@ export function LiveMatchScreen({
   }
 
   function fireAt(coord: Coord): void {
-    if (phase !== 'playing' || !myTurn) {
+    if (!canFire) {
       return;
     }
     match.send({ type: 'fire', cells: [coord] });
   }
 
-  const connecting = match.status === 'connecting' || match.status === 'waiting';
+  const statusLabel =
+    match.status === 'connected'
+      ? tm('live.connected')
+      : match.status === 'waiting'
+        ? tm('live.waitingForOpponent')
+        : match.status === 'reconnecting'
+          ? tm('live.reconnecting')
+          : match.status === 'failed'
+            ? tm('live.failed')
+            : tm('live.connecting');
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-semibold tracking-tight">{tm('live.title')}</h1>
-        <p className="text-muted-foreground text-sm" role="status" aria-live="polite">
-          {match.status === 'connected'
-            ? tm('live.connected')
-            : match.status === 'waiting'
-              ? tm('live.waitingForOpponent')
-              : match.status === 'reconnecting'
-                ? tm('live.reconnecting')
-                : match.status === 'failed'
-                  ? tm('live.failed')
-                  : tm('live.connecting')}
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          {statusLabel}
         </p>
       </header>
 
@@ -134,7 +156,7 @@ export function LiveMatchScreen({
       <TurnBanner state={banner} />
 
       {match.lastError ? (
-        <p className="border-destructive/40 bg-destructive/10 text-destructive mt-3 rounded-md border px-3 py-2 text-sm">
+        <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {tm('live.rejected', { reason: match.lastError })}{' '}
           <button type="button" className="underline" onClick={match.clearError}>
             {tm('live.dismiss')}
@@ -142,13 +164,13 @@ export function LiveMatchScreen({
         </p>
       ) : null}
 
-      {connecting && !view ? (
-        <p className="text-muted-foreground mt-6 text-sm">{tm('live.waitingHint')}</p>
+      {!view ? (
+        <p className="mt-6 text-sm text-muted-foreground">{tm('live.waitingHint')}</p>
       ) : null}
 
       {view && phase === 'placement' && !submitted ? (
-        <section className="mt-6 grid gap-6 sm:grid-cols-[auto_1fr]">
-          <div className="flex flex-col gap-3">
+        <section className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
+          <div className="flex shrink-0 flex-col gap-3">
             <FleetTray
               remaining={draft.remaining}
               selected={draft.selected}
@@ -159,74 +181,87 @@ export function LiveMatchScreen({
               <button
                 type="button"
                 onClick={actions.rotate}
-                className="border-border rounded-md border px-3 py-1.5 text-sm"
+                className="rounded-md border border-border px-3 py-1.5 text-sm"
               >
-                {t('action.rotate')}
+                {t('placement.rotate')}
               </button>
               <button
                 type="button"
                 onClick={autoPlace}
-                className="border-border rounded-md border px-3 py-1.5 text-sm"
+                className="rounded-md border border-border px-3 py-1.5 text-sm"
               >
-                {t('action.autoPlace')}
+                {t('placement.autoPlace')}
               </button>
               <button
                 type="button"
-                onClick={submitFleet}
-                disabled={!draft.complete}
-                className="bg-primary text-primary-foreground rounded-md px-3 py-1.5 text-sm disabled:opacity-50"
+                onClick={actions.reset}
+                className="rounded-md border border-border px-3 py-1.5 text-sm"
               >
-                {tm('live.confirmFleet')}
+                {t('placement.reset')}
               </button>
             </div>
+            <button
+              type="button"
+              onClick={submitFleet}
+              disabled={!draft.complete}
+              className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+            >
+              {draft.complete ? t('placement.start') : t('placement.incomplete')}
+            </button>
+            <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
+              {t('placement.instructions')}
+            </p>
           </div>
 
-          <Board
-            title={t('board.yours')}
-            gridLabel={t('board.yours')}
-            marks={placementMarks}
-            ghost={draft.ghost}
-            invalidPulseKey={draft.invalidPulse}
-            interaction={{
-              cursor: draft.cursor,
-              onCursorChange: actions.setCursor,
-              onActivate: actions.activateCell,
-              onPointerEnterCell: actions.setHover,
-              onPointerLeaveBoard: () => actions.setHover(null),
-              describeCell: (coord, mark) => t(`cell.${mark}`, { coord: coordLabel(coord) }),
-            }}
-          />
-        </section>
-      ) : null}
-
-      {view && (phase !== 'placement' || submitted) && ownGrid && opponentGrid ? (
-        <section className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Board
-            title={t('board.yours')}
-            gridLabel={t('board.yours')}
-            marks={ownGrid}
-            outlines={ownOutlines(view)}
-          />
-          <Board
-            title={t('board.opponent')}
-            gridLabel={t('board.opponent')}
-            marks={opponentGrid}
-            outlines={opponentOutlines(view)}
-            active={myTurn && phase === 'playing'}
-            {...(match.lastShot ? { lastShot: match.lastShot.coord } : {})}
-            interaction={{
-              cursor: { x: 0, y: 0 },
-              onCursorChange: () => undefined,
-              onActivate: fireAt,
-              disabled: !myTurn || phase !== 'playing',
-              describeCell: (coord, mark) => t(`cell.${mark}`, { coord: coordLabel(coord) }),
-            }}
-          />
+          <div className="w-full max-w-[30rem]">
+            <Board
+              title={t('board.yourFleet')}
+              gridLabel={t('board.placementGrid')}
+              marks={emptyMarks}
+              outlines={draftOutlines}
+              ghost={draft.ghost}
+              invalidPulseKey={draft.invalidPulse}
+              interaction={{
+                cursor: draft.cursor,
+                onCursorChange: actions.setCursor,
+                onActivate: actions.activateCell,
+                onPointerEnterCell: actions.setHover,
+                onPointerLeaveBoard: () => actions.setHover(null),
+                describeCell: describeOwnCell,
+              }}
+            />
+          </div>
         </section>
       ) : null}
 
       {view && phase === 'placement' && submitted ? (
-        <p className="text-muted-foreground mt-6 text-sm">{tm('live.waitingForFleet')}</p>
+        <p className="mt-6 text-sm text-muted-foreground">{tm('live.waitingForFleet')}</p>
+      ) : null}
+
+      {view && phase !== 'placement' && ownGrid && opponentGrid ? (
+        <section className="mt-6 grid gap-6 lg:grid-cols-2">
+          <Board
+            title={t('board.enemyWaters')}
+            gridLabel={t('board.enemyGrid')}
+            marks={opponentGrid}
+            outlines={opponentOutlines(view)}
+            active={canFire}
+            {...(match.lastShot ? { lastShot: match.lastShot.coord } : {})}
+            interaction={{
+              cursor: targetCursor,
+              onCursorChange: setTargetCursor,
+              onActivate: fireAt,
+              disabled: !canFire,
+              describeCell: describeTargetCell,
+            }}
+          />
+          <Board
+            title={t('board.yourFleet')}
+            gridLabel={t('board.yourGrid')}
+            marks={ownGrid}
+            outlines={ownOutlines(view)}
+          />
+        </section>
       ) : null}
     </main>
   );

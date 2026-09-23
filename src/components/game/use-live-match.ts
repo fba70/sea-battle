@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ensureGuestSession } from '@/lib/guest-session';
 import type { ClientIntent, ServerEvent } from '@/server/session/protocol';
 import type { PlayerView } from '@/game/view';
 import type { PlayerSlot } from '@/game/types';
@@ -51,8 +52,6 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
 
   const socketRef = useRef<WebSocket | null>(null);
   const seqRef = useRef(0);
-  const attemptRef = useRef(0);
-  const closedRef = useRef(false);
 
   const send = useCallback((intent: ClientIntent) => {
     const socket = socketRef.current;
@@ -66,25 +65,49 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
   const clearError = useCallback(() => setLastError(null), []);
 
   useEffect(() => {
-    closedRef.current = false;
+    /**
+     * Scoped to this effect run rather than kept in a ref.
+     *
+     * React StrictMode mounts twice in development: with a shared ref the second run
+     * reset the flag to false while the first run's async `connect()` was still
+     * awaiting its ticket, so both runs opened a socket and one was orphaned. A local
+     * flag makes each run's cleanup final for that run.
+     */
+    let cancelled = false;
+    let attempt = 0;
     let retryTimer: ReturnType<typeof setTimeout> | undefined;
 
     async function connect(): Promise<void> {
-      if (closedRef.current) {
+      if (cancelled) {
         return;
       }
 
       try {
         // A fresh ticket per attempt: they are short-lived on purpose, and asking
         // again is also how a reconnect re-proves who the player is.
+        await ensureGuestSession();
         const response = await fetch(`/api/game/${gameId}/ticket`, { method: 'POST' });
+        if (cancelled) {
+          return;
+        }
+
         if (!response.ok) {
+          // A ticket can legitimately be unavailable for a moment — the guest session
+          // may still be settling, or the seat may not be committed yet. Retry a few
+          // times before giving up, rather than dead-ending on the first refusal.
+          if (attempt < RECONNECT_DELAYS_MS.length) {
+            const delay = RECONNECT_DELAYS_MS[attempt] as number;
+            attempt += 1;
+            setStatus('connecting');
+            retryTimer = setTimeout(() => void connect(), delay);
+            return;
+          }
           setStatus('failed');
           return;
         }
 
         const { ticket, seat: assigned } = (await response.json()) as TicketResponse;
-        if (closedRef.current) {
+        if (cancelled) {
           return;
         }
         setSeat(assigned);
@@ -95,7 +118,7 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
         socketRef.current = socket;
 
         socket.onopen = () => {
-          attemptRef.current = 0;
+          attempt = 0;
           // A snapshot may not come immediately: the room reports `waiting` until the
           // opponent connects too.
           setStatus((current) => (current === 'connected' ? current : 'waiting'));
@@ -135,13 +158,14 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
 
         socket.onclose = () => {
           socketRef.current = null;
-          if (closedRef.current) {
+          if (cancelled) {
             return;
           }
 
-          const delay =
-            RECONNECT_DELAYS_MS[Math.min(attemptRef.current, RECONNECT_DELAYS_MS.length - 1)];
-          attemptRef.current += 1;
+          const delay = RECONNECT_DELAYS_MS[
+            Math.min(attempt, RECONNECT_DELAYS_MS.length - 1)
+          ] as number;
+          attempt += 1;
           setStatus('reconnecting');
           // Reconnecting is simply connecting again: the server answers with a fresh
           // snapshot, so there is nothing to reconcile on this side.
@@ -152,7 +176,7 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
           socket.close();
         };
       } catch {
-        if (!closedRef.current) {
+        if (!cancelled) {
           setStatus('failed');
         }
       }
@@ -161,7 +185,7 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
     void connect();
 
     return () => {
-      closedRef.current = true;
+      cancelled = true;
       if (retryTimer) {
         clearTimeout(retryTimer);
       }

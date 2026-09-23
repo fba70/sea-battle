@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { ensureGuestSession } from '@/lib/guest-session';
+
 import { LiveMatchScreen } from './live-match-screen';
 
 type QueueState =
@@ -25,6 +27,10 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
   const searching = useRef(false);
 
   const poll = useCallback(async (): Promise<void> => {
+    // See RoomMatch: the queue endpoint needs a session, and the guest one is
+    // established asynchronously.
+    await ensureGuestSession();
+
     const response = await fetch('/api/match/quick', { method: 'POST' });
     if (!response.ok || !searching.current) {
       return;
@@ -46,8 +52,33 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
     if (state.phase !== 'searching') {
       return;
     }
-    const timer = setInterval(() => void poll(), POLL_MS);
-    return () => clearInterval(timer);
+
+    /**
+     * A self-scheduling chain, not `setInterval`.
+     *
+     * Each poll enqueues and then attempts a pairing, so two of them in flight at
+     * once can have the same player claimed and re-queued by its own requests. An
+     * interval fires regardless of whether the previous call finished, which under
+     * load is exactly what happens; chaining guarantees one at a time.
+     */
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+
+    const tick = async (): Promise<void> => {
+      await poll();
+      if (!stopped) {
+        timer = setTimeout(() => void tick(), POLL_MS);
+      }
+    };
+
+    timer = setTimeout(() => void tick(), POLL_MS);
+
+    return () => {
+      stopped = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+    };
   }, [state.phase, poll]);
 
   // Leaving the page should not leave a ghost in the queue.

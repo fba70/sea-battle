@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
+import { ensureGuestSession } from '@/lib/guest-session';
+
 import { LiveMatchScreen } from './live-match-screen';
 
 type JoinState =
@@ -27,6 +29,12 @@ export function RoomMatch({ code, wsUrl }: { readonly code: string; readonly wsU
 
     async function attempt(): Promise<void> {
       try {
+        // GuestSessionProvider deliberately blocks nothing, so on a fresh browser
+        // this request can otherwise beat the anonymous sign-in and come back 401 —
+        // which the UI then reports as "your session expired". `ensureGuestSession`
+        // reuses an existing session, so awaiting it here is idempotent.
+        await ensureGuestSession();
+
         const response = await fetch(`/api/room/${encodeURIComponent(code)}/join`, {
           method: 'POST',
         });

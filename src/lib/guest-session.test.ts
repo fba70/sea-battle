@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ensureGuestSession } from './guest-session';
+import { ensureGuestSession, resetGuestSession } from './guest-session';
 
 type Client = Parameters<typeof ensureGuestSession>[0];
 
@@ -12,6 +12,9 @@ function client(overrides: { getSession?: () => unknown; anonymous?: () => unkno
 }
 
 describe('ensureGuestSession', () => {
+  // The settled identity is module state, shared by every case in this file.
+  beforeEach(resetGuestSession);
+
   it('reuses an existing session instead of minting a second guest', async () => {
     const anonymous = vi.fn();
     const result = await ensureGuestSession(
@@ -60,5 +63,50 @@ describe('ensureGuestSession', () => {
     const result = await ensureGuestSession(client({ anonymous: () => undefined }));
 
     expect(result.status).toBe('unavailable');
+  });
+
+  /**
+   * The bug this guards: several components now call this before their first request,
+   * and React StrictMode mounts each of them twice. Two concurrent callers used to
+   * mint two guests, and the second sign-in replaced the first one's cookie — so a
+   * room seat claimed by the first identity came back as "room full" to the second.
+   */
+  it('mints one guest when several callers race, not one each', async () => {
+    const anonymous = vi.fn(() => ({ data: { user: { id: 'guest-3' } } }));
+    const shared = client({ anonymous });
+
+    const results = await Promise.all([
+      ensureGuestSession(shared),
+      ensureGuestSession(shared),
+      ensureGuestSession(shared),
+    ]);
+
+    expect(anonymous).toHaveBeenCalledTimes(1);
+    expect(results).toEqual([
+      { status: 'created', userId: 'guest-3' },
+      { status: 'created', userId: 'guest-3' },
+      { status: 'created', userId: 'guest-3' },
+    ]);
+  });
+
+  it('never mints a second guest once one is settled, however often it is called', async () => {
+    // The failure this prevents: a later call finding no session yet and signing in
+    // again, replacing the cookie of a player who was already queued or seated.
+    const anonymous = vi.fn(() => ({ data: { user: { id: 'guest-4' } } }));
+    const first = client({ anonymous });
+    expect(await ensureGuestSession(first)).toEqual({ status: 'created', userId: 'guest-4' });
+
+    // A client that reports no session at all must not trigger a second sign-in.
+    const forgetful = client({ getSession: () => ({ data: null }) });
+    expect(await ensureGuestSession(forgetful)).toEqual({ status: 'created', userId: 'guest-4' });
+    expect(anonymous).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays retryable when the backend was unavailable', async () => {
+    const failing = client({ anonymous: () => ({ data: null, error: { message: 'down' } }) });
+    expect((await ensureGuestSession(failing)).status).toBe('unavailable');
+
+    const recovered = client({ anonymous: () => ({ data: { user: { id: 'guest-5' } } }) });
+    expect(await ensureGuestSession(recovered)).toEqual({ status: 'created', userId: 'guest-5' });
   });
 });
