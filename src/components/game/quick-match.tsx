@@ -5,14 +5,27 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ensureGuestSession } from '@/lib/guest-session';
 
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
+
 import { LiveMatchScreen } from './live-match-screen';
+import { WaitingPanel } from './waiting-panel';
 
 type QueueState =
   | { phase: 'idle' }
   | { phase: 'searching'; pool: 'rated' | 'unrated' | null }
   | { phase: 'matched'; gameId: string };
 
-const POLL_MS = 2000;
+/**
+ * How long to wait before asking again.
+ *
+ * A fixed 2s interval meant the player who did *not* win the pairing race kept
+ * showing "searching" for a full interval after the other had already moved on — a
+ * measured 1.8s of the two screens disagreeing. The pairing itself is correct and
+ * unchanged; this only asks sooner in the window where a match is most likely, then
+ * settles back so a long wait is not chatty.
+ */
+const POLL_DELAYS_MS = [600, 900, 1400, 2000];
 
 /**
  * Quick match (spec §7.4).
@@ -63,15 +76,20 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
      */
     let timer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
+    let attempt = 0;
+
+    const nextDelay = (): number =>
+      POLL_DELAYS_MS[Math.min(attempt, POLL_DELAYS_MS.length - 1)] as number;
 
     const tick = async (): Promise<void> => {
       await poll();
+      attempt += 1;
       if (!stopped) {
-        timer = setTimeout(() => void tick(), POLL_MS);
+        timer = setTimeout(() => void tick(), nextDelay());
       }
     };
 
-    timer = setTimeout(() => void tick(), POLL_MS);
+    timer = setTimeout(() => void tick(), nextDelay());
 
     return () => {
       stopped = true;
@@ -95,43 +113,51 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
   }
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-
+    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6">
       {state.phase === 'idle' ? (
-        <button
-          type="button"
-          onClick={() => {
-            searching.current = true;
-            setState({ phase: 'searching', pool: null });
-            void poll();
-          }}
-          className="bg-primary text-primary-foreground mt-6 w-full rounded-md px-4 py-2.5 font-medium"
-        >
-          {t('start')}
-        </button>
+        <WaitingPanel
+          tone="connecting"
+          title={t('idleTitle')}
+          description={t('idleHint')}
+          actions={
+            <>
+              <Button
+                type="button"
+                className="flex-1"
+                onClick={() => {
+                  searching.current = true;
+                  setState({ phase: 'searching', pool: null });
+                  void poll();
+                }}
+              >
+                {t('start')}
+              </Button>
+              <Button asChild variant="outline" className="flex-1">
+                <Link href="/play">{t('backToMenu')}</Link>
+              </Button>
+            </>
+          }
+        />
       ) : (
-        <>
-          <p className="mt-6 text-sm" role="status" aria-live="polite">
-            {t('searching')}
-          </p>
-          {state.pool ? (
-            <p className="text-muted-foreground mt-2 text-sm">
-              {state.pool === 'rated' ? t('poolRated') : t('poolUnrated')}
-            </p>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              searching.current = false;
-              void fetch('/api/match/quick', { method: 'DELETE' });
-              setState({ phase: 'idle' });
-            }}
-            className="border-border mt-6 rounded-md border px-4 py-2 text-sm"
-          >
-            {t('cancel')}
-          </button>
-        </>
+        <WaitingPanel
+          title={t('searchingTitle')}
+          description={state.pool === 'unrated' ? t('poolUnrated') : t('searchingHint')}
+          status={t('searching')}
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => {
+                searching.current = false;
+                void fetch('/api/match/quick', { method: 'DELETE' });
+                setState({ phase: 'idle' });
+              }}
+            >
+              {t('cancel')}
+            </Button>
+          }
+        />
       )}
     </main>
   );

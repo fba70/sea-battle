@@ -232,6 +232,18 @@ test.describe('quick match, two independent guests @core', () => {
       expect(player.problems).toEqual([]);
     }
 
+    /*
+     * Leave the queue explicitly.
+     *
+     * A player who simply closes the tab stays matchable until the row goes stale
+     * (15s), so back-to-back runs of this spec could otherwise pair with the previous
+     * run's ghost and wait forever. That is real product behaviour, not a test bug —
+     * but a test should not leave it behind for the next one.
+     */
+    for (const player of [one, two]) {
+      await player.page.request.delete('/api/match/quick').catch(() => undefined);
+    }
+
     await first.close();
     await second.close();
   });

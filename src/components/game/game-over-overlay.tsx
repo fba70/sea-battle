@@ -14,14 +14,29 @@ export interface GameOverStats {
   readonly shipsLeft: number;
 }
 
+/** One button in the result dialog. Either navigates or runs a callback. */
+export interface GameOverAction {
+  readonly label: string;
+  readonly href?: string;
+  readonly onClick?: () => void;
+  readonly variant?: 'default' | 'outline';
+}
+
 export function GameOverOverlay({
   won,
   stats,
   onRestart,
+  title,
+  body,
+  actions,
 }: {
   won: boolean;
   stats: GameOverStats;
-  onRestart: () => void;
+  /** The bot match restarts in place; a live match cannot, and passes `actions`. */
+  onRestart?: () => void;
+  title?: string;
+  body?: string;
+  actions?: readonly GameOverAction[];
 }) {
   const t = useTranslations('game');
   const reduceMotion = useReducedMotion();
@@ -51,6 +66,15 @@ export function GameOverOverlay({
       first.focus();
     }
   }, []);
+
+  /**
+   * Defaults are the bot match's: restart in place, or go home. A live match has no
+   * "same opponent again", so it supplies its own.
+   */
+  const buttons: readonly GameOverAction[] = actions ?? [
+    { label: t('action.playAgain'), ...(onRestart ? { onClick: onRestart } : {}) },
+    { label: t('action.backHome'), href: '/', variant: 'outline' },
+  ];
 
   const tally = [
     { key: 'shots', label: t('stats.shotsFired'), value: String(stats.shots) },
@@ -100,10 +124,10 @@ export function GameOverOverlay({
               won ? 'text-primary' : 'text-destructive'
             }`}
           >
-            {won ? t('result.wonTitle') : t('result.lostTitle')}
+            {title ?? (won ? t('result.wonTitle') : t('result.lostTitle'))}
           </h2>
           <p className="text-sm text-pretty text-muted-foreground">
-            {won ? t('result.wonBody') : t('result.lostBody')}
+            {body ?? (won ? t('result.wonBody') : t('result.lostBody'))}
           </p>
         </div>
 
@@ -119,12 +143,30 @@ export function GameOverOverlay({
         </dl>
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button className="flex-1" onClick={onRestart} autoFocus>
-            {t('action.playAgain')}
-          </Button>
-          <Button asChild variant="outline" className="flex-1">
-            <Link href="/">{t('action.backHome')}</Link>
-          </Button>
+          {buttons.map((action, index) =>
+            action.href ? (
+              <Button
+                key={action.label}
+                asChild
+                variant={action.variant ?? 'default'}
+                className="flex-1"
+              >
+                <Link href={action.href} autoFocus={index === 0}>
+                  {action.label}
+                </Link>
+              </Button>
+            ) : (
+              <Button
+                key={action.label}
+                className="flex-1"
+                variant={action.variant ?? 'default'}
+                onClick={action.onClick}
+                autoFocus={index === 0}
+              >
+                {action.label}
+              </Button>
+            ),
+          )}
         </div>
       </motion.div>
     </motion.div>

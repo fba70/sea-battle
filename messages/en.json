@@ -255,7 +255,7 @@
       "creating": "Creating room…",
       "joinTitle": "Join with a code",
       "codeInput": "Room code",
-      "codePlaceholder": "e.g. BCDF23",
+      "codePlaceholder": "BCDF23",
       "join": "Join",
       "joining": "Joining…",
       "codeLabel": "Room code:",
@@ -270,7 +270,13 @@
         "already_finished": "That game has already finished.",
         "not_signed_in": "Your session expired. Reload the page and try again.",
         "unknown": "Something went wrong. Try again."
-      }
+      },
+      "waitingTitle": "Room open",
+      "shareHint": "Send the link or read out the code. The match starts the moment they arrive.",
+      "backToMenu": "Back to play menu",
+      "lead": "Play someone you know. Create a room and share the code or link — no account needed.",
+      "createHint": "You get a 6-character code and a link to share.",
+      "or": "or"
     },
     "quick": {
       "title": "Quick match",
@@ -279,7 +285,12 @@
       "cancel": "Cancel",
       "poolRated": "You are queued for a rated match.",
       "poolUnrated": "You are queued for an unrated match. Register to play rated games.",
-      "matched": "Opponent found — starting the match."
+      "matched": "Opponent found — starting the match.",
+      "searchingTitle": "Searching the waters",
+      "searchingHint": "You will be paired with the next player looking for a game.",
+      "idleTitle": "Quick match",
+      "idleHint": "We find you an opponent — no code, no invite, no setup.",
+      "backToMenu": "Back to play menu"
     },
     "live": {
       "title": "Live match",
@@ -292,7 +303,15 @@
       "confirmFleet": "Confirm fleet",
       "waitingForFleet": "Fleet confirmed. Waiting for your opponent to place theirs…",
       "rejected": "The server rejected that: {reason}.",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "failedTitle": "Connection lost",
+      "fleetReadyTitle": "Fleet in position",
+      "result": {
+        "wonBody": "You sank every enemy ship.",
+        "lostBody": "Your opponent sank your fleet first.",
+        "again": "New match",
+        "lobby": "Back to play menu"
+      }
     }
   }
 }

@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react';
 
 import { ensureGuestSession } from '@/lib/guest-session';
 
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/navigation';
+
 import { LiveMatchScreen } from './live-match-screen';
+import { WaitingPanel } from './waiting-panel';
 
 type JoinState =
   | { phase: 'joining' }
@@ -82,41 +86,58 @@ export function RoomMatch({ code, wsUrl }: { readonly code: string; readonly wsU
   const shareUrl = typeof window === 'undefined' ? '' : window.location.href;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
-
+    <main className="mx-auto flex min-h-dvh w-full max-w-2xl flex-col justify-center px-4 py-10 sm:px-6">
       {state.phase === 'error' ? (
-        <p role="alert" className="text-destructive mt-4 text-sm">
-          {t(`errors.${state.reason}` as 'errors.unknown')}
-        </p>
+        <WaitingPanel
+          tone="problem"
+          title={t('title')}
+          description={t(`errors.${state.reason}` as 'errors.unknown')}
+          actions={
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/play">{t('backToMenu')}</Link>
+            </Button>
+          }
+        />
       ) : (
-        <>
-          <p className="mt-4 text-sm">
-            {t('codeLabel')}{' '}
-            <span className="font-mono text-lg font-semibold tracking-widest">{code}</span>
-          </p>
-          <p className="text-muted-foreground mt-4 text-sm">{t('share')}</p>
-          <div className="mt-2 flex gap-2">
-            <input
-              readOnly
-              value={shareUrl}
-              aria-label={t('share')}
-              className="border-border w-full rounded-md border px-3 py-2 text-sm"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                void navigator.clipboard?.writeText(shareUrl).then(() => setCopied(true));
-              }}
-              className="border-border shrink-0 rounded-md border px-3 py-2 text-sm"
-            >
-              {copied ? t('copied') : t('copy')}
-            </button>
+        <WaitingPanel
+          title={t('waitingTitle')}
+          description={t('shareHint')}
+          status={t('waiting')}
+          actions={
+            <Button asChild variant="outline" className="flex-1">
+              <Link href="/play">{t('backToMenu')}</Link>
+            </Button>
+          }
+        >
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-muted-foreground">
+              {t('codeLabel')}{' '}
+              <span className="font-mono text-xl font-semibold tracking-[0.3em] text-foreground">
+                {code}
+              </span>
+            </p>
+
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={shareUrl}
+                aria-label={t('share')}
+                onFocus={(event) => event.currentTarget.select()}
+                className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-xs text-muted-foreground"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="shrink-0"
+                onClick={() => {
+                  void navigator.clipboard?.writeText(shareUrl).then(() => setCopied(true));
+                }}
+              >
+                {copied ? t('copied') : t('copy')}
+              </Button>
+            </div>
           </div>
-          <p className="text-muted-foreground mt-6 text-sm" role="status" aria-live="polite">
-            {t('waiting')}
-          </p>
-        </>
+        </WaitingPanel>
       )}
     </main>
   );

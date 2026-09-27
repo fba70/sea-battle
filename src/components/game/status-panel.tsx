@@ -29,7 +29,20 @@ const DOT: Record<BannerState, string> = {
  * happened. A coloured status dot carries the same information as the tint, so
  * the state is never conveyed by colour alone.
  */
-export function TurnBanner({ state, detail }: { state: BannerState; detail?: string | undefined }) {
+export function TurnBanner({
+  state,
+  detail,
+  compact = false,
+}: {
+  state: BannerState;
+  detail?: string | undefined;
+  /**
+   * Trims the banner from `sm` up. The live match has no site header and shows the
+   * status beside the title, so the full-height banner was mostly empty space there.
+   * Phone sizing is untouched — the banner is the primary status readout there.
+   */
+  compact?: boolean;
+}) {
   const t = useTranslations('game.status');
   const reduceMotion = useReducedMotion();
   const thinking = state === 'opponent';
@@ -39,7 +52,9 @@ export function TurnBanner({ state, detail }: { state: BannerState; detail?: str
       role="status"
       aria-live="polite"
       aria-atomic="true"
-      className={`flex min-h-[3.25rem] items-center gap-3 rounded-xl border px-3.5 py-2.5 ${TONE[state]}`}
+      className={`flex min-h-[3.25rem] items-center gap-3 rounded-xl border px-3.5 py-2.5 ${
+        compact ? 'sm:min-h-0 sm:py-2' : ''
+      } ${TONE[state]}`}
     >
       <span className="relative flex size-2.5 shrink-0">
         {thinking && !reduceMotion ? (

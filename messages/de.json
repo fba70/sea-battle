@@ -255,7 +255,7 @@
       "creating": "Raum wird erstellt…",
       "joinTitle": "Mit Code beitreten",
       "codeInput": "Raumcode",
-      "codePlaceholder": "z. B. BCDF23",
+      "codePlaceholder": "BCDF23",
       "join": "Beitreten",
       "joining": "Trete bei…",
       "codeLabel": "Raumcode:",
@@ -270,7 +270,13 @@
         "already_finished": "Dieses Spiel ist bereits beendet.",
         "not_signed_in": "Deine Sitzung ist abgelaufen. Lade die Seite neu und versuche es erneut.",
         "unknown": "Etwas ist schiefgelaufen. Versuche es erneut."
-      }
+      },
+      "waitingTitle": "Raum geöffnet",
+      "shareHint": "Schicke den Link oder lies den Code vor. Die Partie startet, sobald jemand beitritt.",
+      "backToMenu": "Zurück zum Spielmenü",
+      "lead": "Spiele gegen jemanden, den du kennst. Erstelle einen Raum und teile Code oder Link — ganz ohne Konto.",
+      "createHint": "Du erhältst einen 6-stelligen Code und einen Link zum Teilen.",
+      "or": "oder"
     },
     "quick": {
       "title": "Schnelles Spiel",
@@ -279,7 +285,12 @@
       "cancel": "Abbrechen",
       "poolRated": "Du stehst für ein gewertetes Spiel in der Warteschlange.",
       "poolUnrated": "Du stehst für ein ungewertetes Spiel in der Warteschlange. Registriere dich für gewertete Spiele.",
-      "matched": "Gegner gefunden — das Spiel beginnt."
+      "matched": "Gegner gefunden — das Spiel beginnt.",
+      "searchingTitle": "Suche läuft",
+      "searchingHint": "Du wirst mit der nächsten Person zusammengebracht, die ein Spiel sucht.",
+      "idleTitle": "Schnelles Spiel",
+      "idleHint": "Wir finden dir eine Gegnerin oder einen Gegner — kein Code, keine Einladung, keine Einrichtung.",
+      "backToMenu": "Zurück zum Spielmenü"
     },
     "live": {
       "title": "Live-Partie",
@@ -292,7 +303,15 @@
       "confirmFleet": "Flotte bestätigen",
       "waitingForFleet": "Flotte bestätigt. Warte darauf, dass dein Gegenüber seine platziert…",
       "rejected": "Der Server hat das abgelehnt: {reason}.",
-      "dismiss": "Schließen"
+      "dismiss": "Schließen",
+      "failedTitle": "Verbindung verloren",
+      "fleetReadyTitle": "Flotte in Position",
+      "result": {
+        "wonBody": "Du hast jedes gegnerische Schiff versenkt.",
+        "lostBody": "Dein Gegenüber hat deine Flotte zuerst versenkt.",
+        "again": "Neue Partie",
+        "lobby": "Zurück zum Spielmenü"
+      }
     }
   }
 }
