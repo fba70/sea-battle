@@ -5,6 +5,7 @@ import {
   type RatingSkipReason,
   type StoredGameForRating,
 } from './eligibility';
+import { currentRd } from './policy';
 import type { GameMode } from '../db/schema/game';
 
 /**
@@ -23,6 +24,11 @@ import type { GameMode } from '../db/schema/game';
 
 export interface RatingSnapshot extends GlickoRating {
   readonly userId: string;
+  /**
+   * When this rating was last recalculated. The input to RD inflation, so it has to
+   * come back with the rating itself — see `preMatchRating`.
+   */
+  readonly lastRatingPeriodAt: Date | null;
 }
 
 export interface ApplyRatedResultInput {
@@ -53,10 +59,29 @@ export type RatingOutcome =
   | { readonly status: 'skipped'; readonly gameId: string; readonly reason: RatingSkipReason }
   | { readonly status: 'not_found'; readonly gameId: string };
 
-function ratingFor(snapshots: readonly RatingSnapshot[], userId: string): GlickoRating {
+/**
+ * The rating a player actually enters this game with.
+ *
+ * Spec §7.6 recommends applying RD inflation "lazily at the next game based on
+ * elapsed time", and this is that moment: nothing writes a player's grown RD while
+ * they are away, so their stored RD is only correct as of their last rated match.
+ * The reference instant is the game's own end time, not a clock, which is what lets a
+ * replay or a retry months later reproduce the same numbers.
+ *
+ * An active player is unaffected in practice — zero elapsed time leaves RD untouched
+ * — and a player with no rating row yet starts at spec §7.6's 1500 / RD 350, which is
+ * already the maximum RD and so cannot inflate further.
+ */
+function preMatchRating(
+  snapshots: readonly RatingSnapshot[],
+  userId: string,
+  ratedAt: Date,
+): GlickoRating {
   const found = snapshots.find((snapshot) => snapshot.userId === userId);
-  // Spec §7.6: a player with no rating row yet starts at 1500 / RD 350.
-  return found ? { rating: found.rating, rd: found.rd } : INITIAL_RATING;
+  if (!found) {
+    return INITIAL_RATING;
+  }
+  return { rating: found.rating, rd: currentRd(found, ratedAt) };
 }
 
 /**
@@ -65,11 +90,10 @@ function ratingFor(snapshots: readonly RatingSnapshot[], userId: string): Glicko
  * Both players are updated from the *same* pre-match snapshot — `rateHeadToHead`
  * enforces that structurally, so seat B's new rating never sees seat A's updated one.
  *
- * Note what this deliberately does not do: it applies no RD inflation for inactivity.
- * Spec §7.6 defines that as `RD ← min(sqrt(RD² + c²·t), 350)`, and leaves `c` and the
- * rating-period length to tuning. `inflateRd` exists and is tested; wiring it in is a
- * one-line change once those values are decided. Until then `last_rating_period_at` is
- * recorded so the elapsed time is recoverable.
+ * Inactivity is handled first: each player's stored RD is inflated to what it is as
+ * of this game's end time before any rating math runs (spec §7.6's lazy inflation).
+ * `src/lib/rating/policy.ts` owns the constants that govern it — they are product
+ * decisions, not spec values.
  */
 export async function processFinishedGame(
   store: RatingStore,
@@ -91,8 +115,8 @@ export async function processFinishedGame(
   );
 
   const before = {
-    a: ratingFor(snapshots, eligibility.playerAId),
-    b: ratingFor(snapshots, eligibility.playerBId),
+    a: preMatchRating(snapshots, eligibility.playerAId, eligibility.ratedAt),
+    b: preMatchRating(snapshots, eligibility.playerBId, eligibility.ratedAt),
   };
 
   const rated = rateHeadToHead(before.a, before.b, eligibility.scoreForA);

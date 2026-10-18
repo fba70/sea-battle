@@ -51,8 +51,15 @@ export function createRatingStore(database: Database = defaultDb): RatingStore {
         return [];
       }
 
+      // `lastRatingPeriodAt` comes back with the rating because the processor needs
+      // it to inflate RD for time away (spec §7.6) before rating the game.
       return database
-        .select({ userId: ratings.userId, rating: ratings.rating, rd: ratings.rd })
+        .select({
+          userId: ratings.userId,
+          rating: ratings.rating,
+          rd: ratings.rd,
+          lastRatingPeriodAt: ratings.lastRatingPeriodAt,
+        })
         .from(ratings)
         .where(and(inArray(ratings.userId, [...userIds]), eq(ratings.mode, mode)));
     },

@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { INITIAL_RATING, rateHeadToHead, SCORE } from '@/rating/glicko';
+import { INITIAL_RATING, inflateRd, MAX_RD, rateHeadToHead, SCORE } from '@/rating/glicko';
 
 import { decideRatingEligibility, type StoredGameForRating } from './eligibility';
+import { GLICKO_SYSTEM_CONSTANT } from './policy';
 import {
   processFinishedGame,
   type ApplyRatedResultInput,
@@ -14,6 +15,24 @@ const PLAYER_A = 'user-a';
 const PLAYER_B = 'user-b';
 const GAME_ID = 'game-1';
 
+/** When the game being rated ended; also the instant RD inflation is measured to. */
+const RATED_AT = new Date('2026-09-22T12:00:00Z');
+
+/** A player who has just played: no elapsed time, so no RD inflation. */
+function active(userId: string, rating: number, rd: number): RatingSnapshot {
+  return { userId, rating, rd, lastRatingPeriodAt: RATED_AT };
+}
+
+/** A player whose last rated match was `days` before the game being rated. */
+function awayFor(userId: string, rating: number, rd: number, days: number): RatingSnapshot {
+  return {
+    userId,
+    rating,
+    rd,
+    lastRatingPeriodAt: new Date(RATED_AT.getTime() - days * 24 * 60 * 60 * 1000),
+  };
+}
+
 function storedGame(overrides: Partial<StoredGameForRating> = {}): StoredGameForRating {
   return {
     id: GAME_ID,
@@ -24,7 +43,7 @@ function storedGame(overrides: Partial<StoredGameForRating> = {}): StoredGameFor
     playerAId: PLAYER_A,
     playerBId: PLAYER_B,
     winnerId: PLAYER_A,
-    endedAt: new Date('2026-09-22T12:00:00Z'),
+    endedAt: RATED_AT,
     ratingDeltaA: null,
     ratingDeltaB: null,
     playerAIsAnonymous: false,
@@ -133,8 +152,8 @@ describe('processFinishedGame', () => {
 
   it('rates both players from the same pre-match state', async () => {
     const before = {
-      a: { userId: PLAYER_A, rating: 1620, rd: 80 },
-      b: { userId: PLAYER_B, rating: 1440, rd: 210 },
+      a: active(PLAYER_A, 1620, 80),
+      b: active(PLAYER_B, 1440, 210),
     };
     const { store, applications } = fakeStore({ ratings: [before.a, before.b] });
 
@@ -149,10 +168,7 @@ describe('processFinishedGame', () => {
   });
 
   it('matches each stored rating to the right seat regardless of row order', async () => {
-    const ratings = [
-      { userId: PLAYER_B, rating: 1440, rd: 210 },
-      { userId: PLAYER_A, rating: 1620, rd: 80 },
-    ];
+    const ratings = [active(PLAYER_B, 1440, 210), active(PLAYER_A, 1620, 80)];
     const { store, applications } = fakeStore({ ratings });
 
     await processFinishedGame(store, GAME_ID);
@@ -207,10 +223,7 @@ describe('processFinishedGame', () => {
   });
 
   it('is deterministic for the same stored state', async () => {
-    const ratings = [
-      { userId: PLAYER_A, rating: 1573.2, rd: 142.8 },
-      { userId: PLAYER_B, rating: 1498.6, rd: 97.1 },
-    ];
+    const ratings = [awayFor(PLAYER_A, 1573.2, 142.8, 11.25), active(PLAYER_B, 1498.6, 97.1)];
     const first = await processFinishedGame(fakeStore({ ratings }).store, GAME_ID);
     const second = await processFinishedGame(fakeStore({ ratings }).store, GAME_ID);
 
@@ -289,5 +302,131 @@ describe('exactly-once processing', () => {
     // won the race stored an identical result.
     const deltas = new Set(applications.map((input) => input.a.delta));
     expect(deltas.size).toBe(1);
+  });
+});
+
+describe('inactivity inflates RD before the game is rated (spec §7.6)', () => {
+  /** What the player's RD grows to after `days` away, straight from the policy. */
+  const inflated = (rd: number, days: number) => inflateRd(rd, GLICKO_SYSTEM_CONSTANT, days);
+
+  it('leaves an active player exactly as they were', async () => {
+    const { store, applications } = fakeStore({
+      ratings: [active(PLAYER_A, 1700, 65), active(PLAYER_B, 1680, 70)],
+    });
+    await processFinishedGame(store, GAME_ID);
+
+    // The regression that matters: adding inflation must not move anyone who played
+    // today. Zero elapsed periods, so these are the raw stored deviations.
+    const expected = rateHeadToHead({ rating: 1700, rd: 65 }, { rating: 1680, rd: 70 }, SCORE.win);
+    expect(applications[0]?.a.next).toEqual(expected.a);
+    expect(applications[0]?.b.next).toEqual(expected.b);
+  });
+
+  it('rates a returning player from their grown RD, not their stored one', async () => {
+    const { store, applications } = fakeStore({
+      ratings: [awayFor(PLAYER_A, 1700, 60, 90), active(PLAYER_B, 1700, 60)],
+    });
+    await processFinishedGame(store, GAME_ID);
+
+    const expected = rateHeadToHead(
+      { rating: 1700, rd: inflated(60, 90) },
+      { rating: 1700, rd: 60 },
+      SCORE.win,
+    );
+    expect(applications[0]?.a.next.rating).toBeCloseTo(expected.a.rating, 12);
+    expect(applications[0]?.a.next.rd).toBeCloseTo(expected.a.rd, 12);
+    // c = 15 over 90 daily periods: RD 60 grows to about 154.
+    expect(inflated(60, 90)).toBeCloseTo(154.4, 1);
+  });
+
+  it("inflates the opponent's RD too, not just the returning player's", async () => {
+    const { store, applications } = fakeStore({
+      ratings: [awayFor(PLAYER_A, 1500, 60, 40), awayFor(PLAYER_B, 1500, 60, 40)],
+    });
+    await processFinishedGame(store, GAME_ID);
+
+    const grown = inflated(60, 40);
+    const expected = rateHeadToHead(
+      { rating: 1500, rd: grown },
+      { rating: 1500, rd: grown },
+      SCORE.win,
+    );
+    expect(applications[0]?.b.next.rd).toBeCloseTo(expected.b.rd, 12);
+  });
+
+  it('moves a long-absent player further than a recently active one', async () => {
+    const deltaAfter = async (days: number) => {
+      const { store, applications } = fakeStore({
+        ratings: [awayFor(PLAYER_A, 1500, 60, days), active(PLAYER_B, 1500, 60)],
+      });
+      await processFinishedGame(store, GAME_ID);
+      return applications[0]?.a.delta ?? 0;
+    };
+
+    const [fresh, month, half] = await Promise.all([
+      deltaAfter(0),
+      deltaAfter(30),
+      deltaAfter(180),
+    ]);
+    expect(month).toBeGreaterThan(fresh);
+    expect(half).toBeGreaterThan(month);
+  });
+
+  it('never inflates past the Glicko maximum, however long the absence', async () => {
+    const { store, applications } = fakeStore({
+      ratings: [awayFor(PLAYER_A, 1500, 60, 10_000), active(PLAYER_B, 1500, 60)],
+    });
+    await processFinishedGame(store, GAME_ID);
+
+    // Ten thousand days away is indistinguishable from a brand-new player.
+    const expected = rateHeadToHead(
+      { rating: 1500, rd: MAX_RD },
+      { rating: 1500, rd: 60 },
+      SCORE.win,
+    );
+    expect(applications[0]?.a.next.rd).toBeCloseTo(expected.a.rd, 12);
+  });
+
+  it('measures elapsed time from the game, so a late retry is identical', async () => {
+    const ratings = [awayFor(PLAYER_A, 1612, 74, 45), active(PLAYER_B, 1544, 118)];
+
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-09-22T12:00:01Z'));
+      const prompt = fakeStore({ ratings });
+      await processFinishedGame(prompt.store, GAME_ID);
+
+      // The same game reprocessed a year later must produce the same numbers.
+      vi.setSystemTime(new Date('2027-09-22T12:00:01Z'));
+      const late = fakeStore({ ratings });
+      await processFinishedGame(late.store, GAME_ID);
+
+      expect(late.applications[0]?.a).toEqual(prompt.applications[0]?.a);
+      expect(late.applications[0]?.b).toEqual(prompt.applications[0]?.b);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not inflate a rating row that has never been through a rated match', async () => {
+    const { store, applications } = fakeStore({
+      ratings: [
+        { userId: PLAYER_A, rating: 1500, rd: 350, lastRatingPeriodAt: null },
+        active(PLAYER_B, 1500, 60),
+      ],
+    });
+    await processFinishedGame(store, GAME_ID);
+
+    const expected = rateHeadToHead({ rating: 1500, rd: 350 }, { rating: 1500, rd: 60 }, SCORE.win);
+    expect(applications[0]?.a.next).toEqual(expected.a);
+  });
+
+  it('still starts a player with no rating row at all at 1500 / RD 350', async () => {
+    const { store, applications } = fakeStore({ ratings: [awayFor(PLAYER_B, 1500, 60, 365)] });
+    await processFinishedGame(store, GAME_ID);
+
+    expect(applications[0]?.a.next).toEqual(
+      rateHeadToHead(INITIAL_RATING, { rating: 1500, rd: inflated(60, 365) }, SCORE.win).a,
+    );
   });
 });

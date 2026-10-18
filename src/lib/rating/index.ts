@@ -6,14 +6,17 @@
  * the database: it reads the authoritative `games` row, decides whether the game may
  * move ratings at all (spec §4), and applies the result exactly once.
  *
- * Nothing calls `processFinishedGame` yet. The live game loop that ends a rated game
- * and triggers this is a later block; this one supplies the machinery.
+ * `processFinishedGame` is driven by the Worker's result report, through
+ * `src/app/api/game/result/route.ts`.
  *
- * Still undecided, and deliberately absent: the inactivity constant `c`, the rating
- * period length, and the provisional/leaderboard thresholds. §7.6 leaves all three to
- * tuning, so RD inflation is implemented (`inflateRd`) but not wired in, and
- * `last_rating_period_at` is recorded so elapsed time stays recoverable.
+ * The numbers §7.6 and §7.7 leave to tuning — the inactivity constant `c`, the rating
+ * period length, and the minimum-games / maximum-RD leaderboard thresholds — are
+ * product decisions and live in `policy.ts`, which is also where RD inflation and
+ * leaderboard eligibility are decided. `leaderboard.ts` carries the same eligibility
+ * rule as a SQL predicate for the ranked read.
  */
 export * from './eligibility';
+export * from './leaderboard';
+export * from './policy';
 export * from './process';
 export * from './rating-store';

@@ -177,3 +177,38 @@ describe('loadGame reads the authoritative row and both guest flags', () => {
     expect(captured[0]?.sql).toContain('ratingDeltaA');
   });
 });
+
+describe('loadRatings returns what RD inflation needs', () => {
+  it('selects the rating-period stamp alongside the rating', async () => {
+    const captured: string[] = [];
+    const database = {
+      select: (fields: Record<string, unknown>) => ({
+        from: () => ({
+          where: async () => {
+            captured.push(Object.keys(fields).join(','));
+            return [];
+          },
+        }),
+      }),
+    };
+
+    const store = createRatingStore(database as unknown as Parameters<typeof createRatingStore>[0]);
+    expect(await store.loadRatings(['user-a'], 'classic')).toEqual([]);
+
+    // Without the stamp the processor cannot tell an active player from a returning
+    // one, and spec §7.6's lazy RD inflation silently never happens.
+    expect(captured[0]).toContain('lastRatingPeriodAt');
+    expect(captured[0]).toContain('rd');
+  });
+
+  it('does not query at all for an empty player list', async () => {
+    const database = {
+      select: () => {
+        throw new Error('should not query');
+      },
+    };
+    const store = createRatingStore(database as unknown as Parameters<typeof createRatingStore>[0]);
+
+    expect(await store.loadRatings([], 'classic')).toEqual([]);
+  });
+});
