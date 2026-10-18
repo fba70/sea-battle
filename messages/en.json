@@ -9,7 +9,8 @@
     "faq": "FAQ",
     "support": "Support the project",
     "label": "Main",
-    "footerLabel": "Footer"
+    "footerLabel": "Footer",
+    "leaderboard": "Leaderboard"
   },
   "landing": {
     "title": "Sink the fleet.",
@@ -311,6 +312,105 @@
         "lostBody": "Your opponent sank your fleet first.",
         "again": "New match",
         "lobby": "Back to play menu"
+      }
+    }
+  },
+  "leaderboard": {
+    "title": "Leaderboard",
+    "subtitle": "The global Classic ranking. Ratings use Glicko-1, so beating a stronger opponent is worth more than beating a peer.",
+    "tableCaption": "Ranked players, highest rating first",
+    "recordShort": "{wins}W · {losses}L",
+    "showing": "Showing {shown} of {total, plural, =1 {# ranked player} other {# ranked players}}.",
+    "column": {
+      "rank": "#",
+      "player": "Player",
+      "rating": "Rating",
+      "record": "W/L",
+      "winRate": "Win rate",
+      "deviation": "Deviation"
+    },
+    "criteria": {
+      "title": "How you get ranked",
+      "body": "You appear once you have played {games, plural, =1 {# rated match} other {# rated matches}}, your rating deviation is below {rd}, and you have finished a rated match in the last {days, plural, =1 {# day} other {# days}}. Take a longer break and you drop off the board — your rating, profile and history stay exactly as they were, and one rated match brings you back."
+    },
+    "empty": {
+      "title": "No one has qualified yet",
+      "body": "The ladder opens as soon as someone has played {games, plural, =1 {# rated match} other {# rated matches}} with a rating deviation under {rd}. Rated games are quick matches between registered players.",
+      "cta": "Play a rated match"
+    },
+    "standing": {
+      "title": "Your standing",
+      "rank": "#{rank}",
+      "unranked": "Not ranked",
+      "rating": "Rating",
+      "deviation": "Deviation",
+      "record": "W / L",
+      "winRate": "Win rate",
+      "unratedTitle": "You are not rated yet",
+      "guestBody": "You are playing as a guest, and guest games are unrated. Create an account to earn a rating and a place on the board.",
+      "signedOutBody": "Rated games are quick matches between registered players. Play one to get a rating.",
+      "playRated": "Play a rated match",
+      "viewProfile": "View your profile",
+      "progressLabel": "Progress toward qualifying",
+      "gamesProgress": "{done} of {total} rated matches — {remaining, plural, =1 {# to go} other {# to go}}.",
+      "excluded": {
+        "tooFewGames": "You are not on the board yet: you need a few more rated matches.",
+        "uncertain": "Your rating is still settling. The board needs a deviation below {threshold}; yours is ±{rd}. A few more rated matches will bring it down.",
+        "inactive": "You have dropped off the active board after {days, plural, =1 {# day} other {# days}} without a rated match. Nothing was lost — play one and you are back."
+      }
+    }
+  },
+  "profile": {
+    "title": "Player profile",
+    "subtitle": "Rating, record and rating deviation.",
+    "backToBoard": "Back to leaderboard",
+    "status": {
+      "rank": "Rank #{rank}",
+      "unranked": "Not ranked",
+      "never_rated": "No rated games yet",
+      "too_few_games": "Provisional",
+      "rating_too_uncertain": "Provisional",
+      "inactive": "Inactive"
+    },
+    "stat": {
+      "rating": "Rating",
+      "ratingHint": "Glicko-1, starts at 1500",
+      "deviation": "Deviation",
+      "deviationHint": "How settled the rating is",
+      "deviationInflated": "Grown from ±{stored} while away",
+      "record": "W / L",
+      "recordHint": "Rated games only",
+      "winRate": "Win rate",
+      "gamesRated": "{count, plural, =1 {# rated game} other {# rated games}}"
+    },
+    "notRanked": {
+      "title": "Not on the leaderboard",
+      "tooFewGames": "Qualifying takes {total} rated matches — {remaining, plural, =1 {# still to play} other {# still to play}}.",
+      "uncertain": "The rating is still settling: the board needs a deviation below {threshold}.",
+      "inactive": "No rated match in the last {days, plural, =1 {# day} other {# days}}. The rating and history are untouched; one rated match restores the place."
+    },
+    "history": {
+      "title": "Match history",
+      "privateNote": "Only you can see this",
+      "private": "Match history is private to each player.",
+      "empty": "No finished games yet.",
+      "win": "W",
+      "loss": "L",
+      "versus": "vs {opponent}",
+      "unknownOpponent": "Former player",
+      "rated": "Rated",
+      "unrated": "Unrated",
+      "moves": "{count, plural, =1 {# move} other {# moves}}",
+      "bot": {
+        "easy": "Bot (easy)",
+        "medium": "Bot (medium)",
+        "hard": "Bot (hard)"
+      },
+      "reason": {
+        "sunk_all": "Fleet sunk",
+        "forfeit": "Forfeit",
+        "timeout": "Timeout",
+        "disconnect": "Disconnected"
       }
     }
   }

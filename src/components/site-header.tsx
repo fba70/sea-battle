@@ -40,6 +40,12 @@ export async function SiteHeader() {
             {t('nav.play')}
           </Link>
           <Link
+            href="/leaderboard"
+            className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          >
+            {t('nav.leaderboard')}
+          </Link>
+          <Link
             href="/how-to-play"
             className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           >

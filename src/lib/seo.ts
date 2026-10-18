@@ -16,7 +16,7 @@ export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3
  * both the per-page metadata and the sitemap read from here, so a new page
  * cannot end up in one and not the other.
  */
-export const LOCALIZED_ROUTES = ['', '/how-to-play', '/faq', '/play/bot'] as const;
+export const LOCALIZED_ROUTES = ['', '/how-to-play', '/faq', '/play/bot', '/leaderboard'] as const;
 
 export type LocalizedRoute = (typeof LOCALIZED_ROUTES)[number];
 

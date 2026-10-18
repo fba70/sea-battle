@@ -9,7 +9,8 @@
     "faq": "Häufige Fragen",
     "support": "Projekt unterstützen",
     "label": "Hauptmenü",
-    "footerLabel": "Fußzeile"
+    "footerLabel": "Fußzeile",
+    "leaderboard": "Rangliste"
   },
   "landing": {
     "title": "Versenke die Flotte.",
@@ -311,6 +312,105 @@
         "lostBody": "Dein Gegenüber hat deine Flotte zuerst versenkt.",
         "again": "Neue Partie",
         "lobby": "Zurück zum Spielmenü"
+      }
+    }
+  },
+  "leaderboard": {
+    "title": "Rangliste",
+    "subtitle": "Die globale Classic-Rangliste. Die Wertung nutzt Glicko-1: Ein Sieg gegen stärkere Gegner zählt mehr als einer gegen Gleichstarke.",
+    "tableCaption": "Platzierte Spielerinnen und Spieler, höchste Wertung zuerst",
+    "recordShort": "{wins}S · {losses}N",
+    "showing": "{shown} von {total, plural, =1 {# platzierten Person} other {# platzierten Personen}} werden angezeigt.",
+    "column": {
+      "rank": "#",
+      "player": "Spieler",
+      "rating": "Wertung",
+      "record": "S/N",
+      "winRate": "Siegquote",
+      "deviation": "Abweichung"
+    },
+    "criteria": {
+      "title": "So kommst du in die Rangliste",
+      "body": "Du erscheinst, sobald du {games, plural, =1 {# gewertete Partie} other {# gewertete Partien}} gespielt hast, deine Wertungsabweichung unter {rd} liegt und deine letzte gewertete Partie höchstens {days, plural, =1 {# Tag} other {# Tage}} her ist. Nach einer längeren Pause verschwindest du aus der Rangliste — Wertung, Profil und Verlauf bleiben unverändert, und eine gewertete Partie bringt dich zurück."
+    },
+    "empty": {
+      "title": "Noch hat sich niemand qualifiziert",
+      "body": "Die Rangliste öffnet, sobald jemand {games, plural, =1 {# gewertete Partie} other {# gewertete Partien}} mit einer Wertungsabweichung unter {rd} gespielt hat. Gewertet werden Schnellpartien zwischen registrierten Personen.",
+      "cta": "Gewertete Partie spielen"
+    },
+    "standing": {
+      "title": "Deine Platzierung",
+      "rank": "Platz {rank}",
+      "unranked": "Nicht platziert",
+      "rating": "Wertung",
+      "deviation": "Abweichung",
+      "record": "S / N",
+      "winRate": "Siegquote",
+      "unratedTitle": "Du hast noch keine Wertung",
+      "guestBody": "Du spielst als Gast, und Gastpartien werden nicht gewertet. Lege ein Konto an, um eine Wertung und einen Ranglistenplatz zu bekommen.",
+      "signedOutBody": "Gewertet werden Schnellpartien zwischen registrierten Personen. Spiele eine, um eine Wertung zu erhalten.",
+      "playRated": "Gewertete Partie spielen",
+      "viewProfile": "Profil ansehen",
+      "progressLabel": "Fortschritt zur Qualifikation",
+      "gamesProgress": "{done} von {total} gewerteten Partien — {remaining, plural, =1 {noch #} other {noch #}}.",
+      "excluded": {
+        "tooFewGames": "Du stehst noch nicht in der Rangliste: Dir fehlen noch ein paar gewertete Partien.",
+        "uncertain": "Deine Wertung ist noch nicht eingependelt. Die Rangliste verlangt eine Abweichung unter {threshold}; deine liegt bei ±{rd}. Ein paar gewertete Partien senken sie.",
+        "inactive": "Nach {days, plural, =1 {# Tag} other {# Tagen}} ohne gewertete Partie bist du aus der aktiven Rangliste gefallen. Nichts ist verloren — spiele eine Partie und du bist zurück."
+      }
+    }
+  },
+  "profile": {
+    "title": "Spielerprofil",
+    "subtitle": "Wertung, Bilanz und Wertungsabweichung.",
+    "backToBoard": "Zurück zur Rangliste",
+    "status": {
+      "rank": "Platz {rank}",
+      "unranked": "Nicht platziert",
+      "never_rated": "Noch keine gewerteten Partien",
+      "too_few_games": "Vorläufig",
+      "rating_too_uncertain": "Vorläufig",
+      "inactive": "Inaktiv"
+    },
+    "stat": {
+      "rating": "Wertung",
+      "ratingHint": "Glicko-1, Start bei 1500",
+      "deviation": "Abweichung",
+      "deviationHint": "Wie gefestigt die Wertung ist",
+      "deviationInflated": "Während der Pause von ±{stored} gewachsen",
+      "record": "S / N",
+      "recordHint": "Nur gewertete Partien",
+      "winRate": "Siegquote",
+      "gamesRated": "{count, plural, =1 {# gewertete Partie} other {# gewertete Partien}}"
+    },
+    "notRanked": {
+      "title": "Nicht in der Rangliste",
+      "tooFewGames": "Zur Qualifikation gehören {total} gewertete Partien — {remaining, plural, =1 {noch #} other {noch #}}.",
+      "uncertain": "Die Wertung pendelt sich noch ein: Die Rangliste verlangt eine Abweichung unter {threshold}.",
+      "inactive": "Seit {days, plural, =1 {# Tag} other {# Tagen}} keine gewertete Partie. Wertung und Verlauf bleiben unberührt; eine gewertete Partie stellt den Platz wieder her."
+    },
+    "history": {
+      "title": "Partienverlauf",
+      "privateNote": "Nur für dich sichtbar",
+      "private": "Der Partienverlauf ist privat.",
+      "empty": "Noch keine beendeten Partien.",
+      "win": "S",
+      "loss": "N",
+      "versus": "gegen {opponent}",
+      "unknownOpponent": "Ehemalige Person",
+      "rated": "Gewertet",
+      "unrated": "Ungewertet",
+      "moves": "{count, plural, =1 {# Zug} other {# Züge}}",
+      "bot": {
+        "easy": "Bot (leicht)",
+        "medium": "Bot (mittel)",
+        "hard": "Bot (schwer)"
+      },
+      "reason": {
+        "sunk_all": "Flotte versenkt",
+        "forfeit": "Aufgegeben",
+        "timeout": "Zeit abgelaufen",
+        "disconnect": "Verbindung verloren"
       }
     }
   }
