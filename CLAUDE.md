@@ -63,6 +63,28 @@ When completing a task:
 - Report verification commands and their results.
 - Clearly state anything that remains incomplete or unresolved.
 
+### Reporting style
+
+This section is about communication only. It must never reduce the amount or quality
+of the work. Keep reviewing, testing and fixing everything thoroughly; just show less
+of the machinery.
+
+While working:
+
+- Work independently. Do not narrate each edit or ask for confirmation of routine steps.
+- Do not display code, diffs, file contents or line-by-line edits.
+- Keep command output quiet: use quiet flags and filter output rather than printing it
+  in full. Surface only failures and findings that matter.
+- Give short progress notes in plain language instead.
+
+When finished:
+
+- Explain what was accomplished in simple, non-technical language.
+- Cover what works, what does not, important fixes, test results, decisions needed and
+  the next step.
+- Keep it conversational, roughly 10-15 lines.
+- Show code or technical detail only when it needs attention, or when asked for it.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
