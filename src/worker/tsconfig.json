@@ -9,6 +9,15 @@
     "types": ["@cloudflare/workers-types"],
     "noEmit": true
   },
+  // The root config excludes `src/worker` so Next never compiles it, and `exclude` is
+  // inherited through `extends` and filters `include` — so without this override the
+  // Worker's own source was silently dropped from its own typecheck.
+  //
+  // The `.worker.test.ts` files stay out: they import the virtual `cloudflare:test`
+  // module, whose types live behind a package subpath that neither `types` nor a
+  // reference file resolves in this version. They are exercised by `npm run
+  // test:workers`, which is how they were covered before this override existed.
+  "exclude": ["./**/*.worker.test.ts"],
   "include": [
     "./**/*.ts",
     "./**/*.d.ts",

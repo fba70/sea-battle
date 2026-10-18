@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ensureGuestSession } from '@/lib/guest-session';
-import type { ClientIntent, ServerEvent } from '@/server/session/protocol';
+import type { ClientIntent, ServerEvent, SnapshotTimers } from '@/server/session/protocol';
 import type { PlayerView } from '@/game/view';
 import type { PlayerSlot } from '@/game/types';
 
@@ -27,6 +27,14 @@ export interface LiveMatch {
   /** The most recent rejection from the server, for inline feedback. */
   readonly lastError: string | null;
   readonly lastShot: { readonly coord: { x: number; y: number }; readonly at: number } | null;
+  /**
+   * Deadlines as the server last reported them (spec §4).
+   *
+   * Display only. Every instant here is the server's, and the server is what decides
+   * that a deadline has passed — a client whose clock is wrong sees a wrong
+   * countdown, never a wrong outcome.
+   */
+  readonly timers: SnapshotTimers | null;
   send(intent: ClientIntent): void;
   clearError(): void;
 }
@@ -49,9 +57,17 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
   const [seat, setSeat] = useState<PlayerSlot | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastShot, setLastShot] = useState<LiveMatch['lastShot']>(null);
+  const [timers, setTimers] = useState<SnapshotTimers | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const seqRef = useRef(0);
+  /**
+   * Whether the server has told us the game is over.
+   *
+   * Kept in a ref because the socket's close handler is created once per connection
+   * and would otherwise close over a stale `view`.
+   */
+  const finishedRef = useRef(false);
 
   const send = useCallback((intent: ClientIntent) => {
     const socket = socketRef.current;
@@ -129,7 +145,11 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
 
           switch (message.type) {
             case 'state_snapshot':
+              finishedRef.current = message.view.phase === 'finished';
               setView(message.view);
+              // Every snapshot carries the clock, so the disconnect and turn events
+              // are only hints — this is the single source the UI renders from.
+              setTimers(message.timers);
               setStatus('connected');
               break;
             case 'fire_result': {
@@ -159,6 +179,13 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
         socket.onclose = () => {
           socketRef.current = null;
           if (cancelled) {
+            return;
+          }
+
+          // A finished game has nothing left to reconnect to. Retrying would mint a
+          // ticket and wake the game's Durable Object every few seconds for as long
+          // as the tab stayed open, for a result that cannot change.
+          if (finishedRef.current) {
             return;
           }
 
@@ -194,5 +221,5 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
     };
   }, [gameId, wsUrl]);
 
-  return { status, view, seat, lastError, lastShot, send, clearError };
+  return { status, view, seat, lastError, lastShot, timers, send, clearError };
 }

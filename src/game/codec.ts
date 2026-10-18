@@ -323,8 +323,17 @@ function checkInvariants(state: GameState): void {
       if (state.turn !== null) {
         fail('inconsistent_state', 'a finished game has no player to move', 'turn');
       }
-      if (state.winner === null || state.resultReason === null) {
-        fail('inconsistent_state', 'a finished game must record a winner and a reason', 'winner');
+      /**
+       * A reason is always required; a winner is not.
+       *
+       * `abandon` (spec §4) ends a game that both players walked away from, and there
+       * is deliberately nobody to award it to — inventing a winner there would hand
+       * out a rated win for leaving. This invariant used to demand one, which made
+       * that state impossible to store: the room could never be restored again, so
+       * the result was never reported and the game row stayed open forever.
+       */
+      if (state.resultReason === null) {
+        fail('inconsistent_state', 'a finished game must record a reason', 'resultReason');
       }
       break;
   }

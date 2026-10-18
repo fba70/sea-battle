@@ -311,8 +311,42 @@
         "wonBody": "Du hast jedes gegnerische Schiff versenkt.",
         "lostBody": "Dein Gegenüber hat deine Flotte zuerst versenkt.",
         "again": "Neue Partie",
-        "lobby": "Zurück zum Spielmenü"
-      }
+        "lobby": "Zurück zum Spielmenü",
+        "abandonedTitle": "Niemand hat beendet",
+        "abandonedBody": "Beide Seiten haben die Partie verlassen, daher gibt es kein Ergebnis. Es wurde nichts gewertet.",
+        "ended": {
+          "sunk_all": {
+            "won": "Du hast das letzte Schiff versenkt.",
+            "lost": "Dein letztes Schiff wurde versenkt."
+          },
+          "forfeit": {
+            "won": "Die Gegenseite hat aufgegeben.",
+            "lost": "Du hast aufgegeben."
+          },
+          "timeout": {
+            "won": "Der Gegenseite ist die Zeit ausgegangen.",
+            "lost": "Dir ist in zu vielen Zügen die Zeit ausgegangen."
+          },
+          "disconnect": {
+            "won": "Die Gegenseite ist nicht rechtzeitig zurückgekehrt.",
+            "lost": "Du bist nicht rechtzeitig zurückgekehrt."
+          }
+        }
+      },
+      "opponentAway": "Die Gegenseite hat die Verbindung verloren. Noch <time></time> zum Wiederverbinden.",
+      "missedTurns": "Du hast {missed} von {max} Zügen verpasst. Bei {max} verpassten Zügen ist die Partie verloren."
+    },
+    "clock": {
+      "seconds": "{seconds}s",
+      "paused": "Uhr angehalten",
+      "turnLabel": "Verbleibende Zeit für diesen Zug",
+      "placementLabel": "Verbleibende Zeit zum Aufstellen"
+    },
+    "resign": {
+      "action": "Aufgeben",
+      "confirmQuestion": "Aufgeben und diese Partie verlieren?",
+      "confirm": "Ja, aufgeben",
+      "cancel": "Weiterspielen"
     }
   },
   "leaderboard": {

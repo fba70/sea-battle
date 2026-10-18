@@ -311,8 +311,42 @@
         "wonBody": "You sank every enemy ship.",
         "lostBody": "Your opponent sank your fleet first.",
         "again": "New match",
-        "lobby": "Back to play menu"
-      }
+        "lobby": "Back to play menu",
+        "abandonedTitle": "Nobody finished",
+        "abandonedBody": "Both players left the game, so there is no result. Nothing was rated.",
+        "ended": {
+          "sunk_all": {
+            "won": "You sank their last ship.",
+            "lost": "They sank your last ship."
+          },
+          "forfeit": {
+            "won": "Your opponent resigned.",
+            "lost": "You resigned."
+          },
+          "timeout": {
+            "won": "Your opponent ran out of time.",
+            "lost": "You ran out of time on too many turns."
+          },
+          "disconnect": {
+            "won": "Your opponent did not come back in time.",
+            "lost": "You did not get back in time."
+          }
+        }
+      },
+      "opponentAway": "Your opponent lost connection. <time></time> left to reconnect.",
+      "missedTurns": "You have missed {missed} of {max} turns. Miss {max} and the game is lost on time."
+    },
+    "clock": {
+      "seconds": "{seconds}s",
+      "paused": "Clock paused",
+      "turnLabel": "Time left this turn",
+      "placementLabel": "Time left to place your fleet"
+    },
+    "resign": {
+      "action": "Resign",
+      "confirmQuestion": "Resign and lose this game?",
+      "confirm": "Yes, resign",
+      "cancel": "Keep playing"
     }
   },
   "leaderboard": {

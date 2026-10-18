@@ -41,5 +41,11 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: outcome.reason }, { status: 422 });
   }
 
-  return Response.json({ status: outcome.status, rating: outcome.rating.status });
+  // An aborted game carries no rating: nobody won it, so there was nothing to rate
+  // (spec §4, and the agreed rule for a match both players walked away from).
+  if (outcome.status === 'completed' || outcome.status === 'already_completed') {
+    return Response.json({ status: outcome.status, rating: outcome.rating.status });
+  }
+
+  return Response.json({ status: outcome.status });
 }

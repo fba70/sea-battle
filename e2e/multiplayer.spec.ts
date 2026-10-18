@@ -210,6 +210,76 @@ test.describe('private room, two independent players @core', () => {
   });
 });
 
+test.describe('timers, disconnects and resigning @core', () => {
+  test('a player can resign, but only after confirming', async ({ browser }) => {
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+    const host = await newPlayer(hostContext);
+    const guest = await newPlayer(guestContext);
+
+    await host.page.goto('/en/play/room');
+    await host.page.getByRole('button', { name: /create a room/i }).click();
+    await expect(host.page).toHaveURL(/\/room\/[A-Z0-9]{6}$/, { timeout: 20_000 });
+
+    await guest.page.goto(host.page.url());
+    await reachPlacement(guest.page);
+    await reachPlacement(host.page);
+
+    // The move clock is visible and counting towards a server deadline.
+    await expect(host.page.getByRole('timer')).toBeVisible();
+
+    // One click arms it; the game is still live until the second.
+    await host.page.getByRole('button', { name: /^resign$/i }).click();
+    await expect(host.page.getByText(/resign and lose this game/i)).toBeVisible();
+    await host.page.getByRole('button', { name: /keep playing/i }).click();
+    await expect(host.page.getByText(/resign and lose this game/i)).toHaveCount(0);
+
+    await host.page.getByRole('button', { name: /^resign$/i }).click();
+    await host.page.getByRole('button', { name: /yes, resign/i }).click();
+
+    // Both sides are told, and told why.
+    await expect(host.page.getByText(/you resigned/i)).toBeVisible({ timeout: 20_000 });
+    await expect(guest.page.getByText(/your opponent resigned/i)).toBeVisible({ timeout: 20_000 });
+
+    for (const [label, player] of [
+      ['host', host],
+      ['guest', guest],
+    ] as const) {
+      expect(player.problems, `${label} console`).toEqual([]);
+    }
+
+    await hostContext.close();
+    await guestContext.close();
+  });
+
+  test('the opponent is told when a connection drops, with a countdown', async ({ browser }) => {
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+    const host = await newPlayer(hostContext);
+    const guest = await newPlayer(guestContext);
+
+    await host.page.goto('/en/play/room');
+    await host.page.getByRole('button', { name: /create a room/i }).click();
+    await expect(host.page).toHaveURL(/\/room\/[A-Z0-9]{6}$/, { timeout: 20_000 });
+
+    await guest.page.goto(host.page.url());
+    await reachPlacement(guest.page);
+    await reachPlacement(host.page);
+
+    // Closing the tab is the realistic way a connection goes away.
+    await guest.page.close();
+
+    await expect(host.page.getByText(/lost connection/i)).toBeVisible({ timeout: 20_000 });
+    // The clock stops while someone is away, so nobody loses on time waiting.
+    await expect(host.page.getByText(/clock paused/i)).toBeVisible();
+
+    expect(host.problems, 'host console').toEqual([]);
+
+    await hostContext.close();
+    await guestContext.close();
+  });
+});
+
 test.describe('quick match, two independent guests @core', () => {
   test('two waiting players are paired and both reach placement', async ({ browser }) => {
     const first = await browser.newContext();
@@ -246,6 +316,62 @@ test.describe('quick match, two independent guests @core', () => {
 
     await first.close();
     await second.close();
+  });
+});
+
+test.describe('starting another match afterwards @core', () => {
+  test('“New match” starts a fresh search for both players', async ({ browser }) => {
+    /**
+     * The reported bug: the button did nothing. Quick match renders the live game in
+     * place at /play/quick, so a link to /play/quick navigated nowhere and the
+     * finished game simply stayed on screen.
+     */
+    const firstContext = await browser.newContext();
+    const secondContext = await browser.newContext();
+    const one = await newPlayer(firstContext);
+    const two = await newPlayer(secondContext);
+
+    for (const player of [one, two]) {
+      await player.page.goto('/en/play/quick');
+      await player.page.getByRole('button', { name: /find an opponent/i }).click();
+    }
+
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    // Resigning is the quickest honest way to finish a match.
+    await one.page.getByRole('button', { name: /^resign$/i }).click();
+    await one.page.getByRole('button', { name: /yes, resign/i }).click();
+    await expect(one.page.getByText(/you resigned/i)).toBeVisible({ timeout: 20_000 });
+    await expect(two.page.getByText(/your opponent resigned/i)).toBeVisible({ timeout: 20_000 });
+
+    // Each player asks for another match on their own, and both leave the finished
+    // game behind rather than sitting on the result.
+    for (const player of [one, two]) {
+      await player.page.getByRole('button', { name: /new match/i }).click();
+      await expect(player.page.getByRole('heading', { name: /live match/i })).toHaveCount(0, {
+        timeout: 20_000,
+      });
+    }
+
+    // Two searchers in the same pool pair up again, which is the proof that neither
+    // was left holding the old game.
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    for (const [label, player] of [
+      ['one', one],
+      ['two', two],
+    ] as const) {
+      expect(player.problems, `${label} console`).toEqual([]);
+    }
+
+    for (const player of [one, two]) {
+      await player.page.request.delete('/api/match/quick').catch(() => undefined);
+    }
+
+    await firstContext.close();
+    await secondContext.close();
   });
 });
 

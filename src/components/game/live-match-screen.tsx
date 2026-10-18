@@ -23,6 +23,8 @@ import {
 } from './board-model';
 import { FleetTray } from './fleet-tray';
 import { GameOverOverlay } from './game-over-overlay';
+import { GraceCountdown, MatchClock } from './match-clock';
+import { ResignButton } from './resign-button';
 import { WaitingPanel } from './waiting-panel';
 import { TurnBanner, type BannerState } from './status-panel';
 import { useFleetPlacement } from './use-fleet-placement';
@@ -40,10 +42,19 @@ export function LiveMatchScreen({
   gameId,
   wsUrl,
   roomCode,
+  onNewMatch,
 }: {
   readonly gameId: string;
   readonly wsUrl: string;
   readonly roomCode?: string;
+  /**
+   * Starts another match without leaving the page.
+   *
+   * Quick match renders this screen *in place* at `/play/quick`, so a "New match"
+   * link pointing at that same URL navigated nowhere and the finished game stayed on
+   * screen — the button looked broken. The owner of the page resets itself instead.
+   */
+  readonly onNewMatch?: () => void;
 }) {
   const t = useTranslations('game');
   const tm = useTranslations('multiplayer');
@@ -54,6 +65,7 @@ export function LiveMatchScreen({
   const [targetCursor, setTargetCursor] = useState<Coord>({ x: 0, y: 0 });
 
   const view = match.view;
+  const timers = match.timers;
   const phase = view?.phase ?? 'placement';
   // The server decides whose turn it is; this is only how it is displayed.
   const myTurn = view?.isYourTurn ?? false;
@@ -135,11 +147,31 @@ export function LiveMatchScreen({
     );
   }
 
+  function resign(): void {
+    match.send({ type: 'resign' });
+  }
+
   function fireAt(coord: Coord): void {
     if (!canFire) {
       return;
     }
     match.send({ type: 'fire', cells: [coord] });
+  }
+
+  const seatOfViewer = view?.viewer ?? null;
+
+  function renderStrikeWarning(missed: number, max: number) {
+    if (missed === 0) {
+      return null;
+    }
+    return (
+      <p
+        role="status"
+        className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+      >
+        {tm('live.missedTurns', { missed, max })}
+      </p>
+    );
   }
 
   const statusLabel =
@@ -157,12 +189,46 @@ export function LiveMatchScreen({
     <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-5">
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3 lg:mb-3">
         <h1 className="text-xl font-semibold tracking-tight">{tm('live.title')}</h1>
-        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
-          {statusLabel}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/* The clock sits beside the connection state: both answer "is this game
+              still moving?", and a player glances at them together. */}
+          {timers && phase !== 'finished' ? (
+            <MatchClock
+              deadlineTs={timers.deadlineTs}
+              paused={timers.paused}
+              label={phase === 'placement' ? tm('clock.placementLabel') : tm('clock.turnLabel')}
+            />
+          ) : null}
+          <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+            {statusLabel}
+          </p>
+        </div>
       </header>
 
       <TurnBanner state={banner} compact />
+
+      {/* Spec §9's `opponent_disconnected`: the player who is still here is told what
+          is happening and when it resolves, rather than watching a frozen board. */}
+      {timers?.opponentOffline &&
+      timers.opponentGraceDeadlineTs !== null &&
+      phase !== 'finished' ? (
+        <p
+          role="status"
+          aria-live="polite"
+          className="mt-3 flex flex-wrap items-center gap-x-1.5 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm"
+        >
+          {tm.rich('live.opponentAway', {
+            // A placeholder rather than a trailing value, so each language puts the
+            // countdown where its own grammar wants it.
+            time: () => <GraceCountdown deadlineTs={timers.opponentGraceDeadlineTs as number} />,
+          })}
+        </p>
+      ) : null}
+
+      {/* The third missed turn ends the game, so the warning arrives before it. */}
+      {timers && seatOfViewer !== null && phase === 'playing'
+        ? renderStrikeWarning(timers.missedTurns[seatOfViewer], timers.maxMissedTurns)
+        : null}
 
       {match.lastError ? (
         <p className="mt-3 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -324,8 +390,22 @@ export function LiveMatchScreen({
           {phase === 'finished' ? (
             <GameOverOverlay
               won={won}
-              title={won ? t('result.wonTitle') : t('result.lostTitle')}
-              body={won ? tm('live.result.wonBody') : tm('live.result.lostBody')}
+              title={
+                view.winner === null
+                  ? tm('live.result.abandonedTitle')
+                  : won
+                    ? t('result.wonTitle')
+                    : t('result.lostTitle')
+              }
+              body={
+                // Why it ended matters as much as who won: "they ran out of time" and
+                // "they resigned" are different stories about the same scoreline.
+                view.winner === null
+                  ? tm('live.result.abandonedBody')
+                  : tm(
+                      `live.result.ended.${view.resultReason ?? 'sunk_all'}.${won ? 'won' : 'lost'}`,
+                    )
+              }
               stats={{
                 shots: view.opponent.shotsFired,
                 hits: view.opponent.hits,
@@ -336,12 +416,24 @@ export function LiveMatchScreen({
                 shipsLeft: view.own.shipsRemaining,
               }}
               actions={[
-                { label: tm('live.result.again'), href: roomCode ? '/play/room' : '/play/quick' },
+                onNewMatch
+                  ? { label: tm('live.result.again'), onClick: onNewMatch }
+                  : {
+                      label: tm('live.result.again'),
+                      href: roomCode ? '/play/room' : '/play/quick',
+                    },
                 { label: tm('live.result.lobby'), href: '/play', variant: 'outline' },
               ]}
             />
           ) : null}
         </section>
+      ) : null}
+
+      {/* Leaving is always available while a game is live, and always confirmed. */}
+      {view && phase !== 'finished' ? (
+        <div className="mt-5 flex justify-center border-t border-border pt-4">
+          <ResignButton onResign={resign} />
+        </div>
       ) : null}
     </main>
   );

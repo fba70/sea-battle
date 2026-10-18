@@ -203,14 +203,37 @@ export interface FireResultCell {
  * because `PlayerView` is the shape the hidden-information filter already produces and
  * the UI already renders.
  *
- * §9's `timers` and `scores` fields are absent: timers are Block 9 (spec §4) and
- * Classic has no score beyond ships remaining, which the view already carries.
+ * §9's `scores` field is absent: Classic has no score beyond ships remaining, which
+ * the view already carries. `timers` is below.
  */
 export interface StateSnapshotEvent {
   readonly type: 'state_snapshot';
   readonly view: PlayerView;
   /** Server-side revision of the authoritative state; see `GameSession.revision`. */
   readonly revision: number;
+  readonly timers: SnapshotTimers;
+}
+
+/**
+ * §9's `timers`, filtered per recipient like everything else that crosses this
+ * boundary (spec §4).
+ *
+ * All instants are server epoch milliseconds. The client counts down towards them
+ * and never decides anything: an expiry is only real once the server says so.
+ */
+export interface SnapshotTimers {
+  /** When the current move or placement deadline falls; null when nothing is running. */
+  readonly deadlineTs: number | null;
+  /** True while someone is away — the clock is frozen and no deadline is running. */
+  readonly paused: boolean;
+  /** Whether the *other* player is currently disconnected. */
+  readonly opponentOffline: boolean;
+  /** When the opponent's grace window runs out, if they are away. */
+  readonly opponentGraceDeadlineTs: number | null;
+  /** Turns each side has let expire, so the UI can warn before the third. */
+  readonly missedTurns: Readonly<Record<PlayerSlot, number>>;
+  /** How many missed turns end the game. */
+  readonly maxMissedTurns: number;
 }
 
 export type ServerEvent =
@@ -221,7 +244,25 @@ export type ServerEvent =
       readonly reason: SessionErrorCode;
       readonly message: string;
     }
-  | { readonly type: 'turn_changed'; readonly activePlayer: PlayerSlot }
+  | {
+      readonly type: 'turn_changed';
+      readonly activePlayer: PlayerSlot;
+      /** When this turn expires; absent while the clock is paused or not running. */
+      readonly deadlineTs?: number;
+    }
+  | {
+      /** Spec §9: the opponent dropped, and when their grace window closes. */
+      readonly type: 'opponent_disconnected';
+      readonly seat: PlayerSlot;
+      readonly graceDeadlineTs: number;
+    }
+  | { readonly type: 'opponent_reconnected'; readonly seat: PlayerSlot }
+  | {
+      /** A turn passed without a shot (spec §4's auto-skip). */
+      readonly type: 'turn_skipped';
+      readonly seat: PlayerSlot;
+      readonly missedTurns: number;
+    }
   | {
       readonly type: 'fire_result';
       readonly firedBy: PlayerSlot;

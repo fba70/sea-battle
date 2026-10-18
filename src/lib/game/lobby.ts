@@ -102,8 +102,60 @@ export interface LobbyStore {
    * Pairing removes both players from the queue, but only the matcher learns the
    * result from its own call — the other player is still polling. This is how they
    * find out.
+   *
+   * `resumableForMs` bounds how old such a game may be. A row stays `live` until the
+   * realtime layer reports its result, so a report that never lands would otherwise
+   * pin the player to a game that is long over: every attempt to start a new one
+   * would hand them the dead game back, which looks exactly like a button that does
+   * nothing. Past the window the game is abandoned by definition, so resuming it
+   * could not be right in any case.
    */
-  findActiveMatch(playerId: string): Promise<Seating | null>;
+  findActiveMatch(input: { playerId: string; resumableForMs: number }): Promise<Seating | null>;
+
+  /**
+   * Closes games that were left open and will never finish (spec §4).
+   *
+   * Returns how many rows it closed, which is only useful for tests and logs.
+   */
+  abortAbandonedGames(input: { olderThanMs: number; limit: number }): Promise<number>;
+}
+
+/**
+ * How long a `live` row may sit untouched before it is written off.
+ *
+ * The case this exists for is a private room nobody ever joined: no Durable Object
+ * ever woke for it, so no disconnect grace and no timer can ever apply, and the row
+ * would otherwise hold its join code forever.
+ *
+ * Two hours is far longer than any game can actually last — with a 30-second move
+ * clock and three strikes, the longest possible match is well under one — so this can
+ * never close a game somebody is still playing.
+ */
+export const ABANDONED_GAME_AFTER_MS = 2 * 60 * 60 * 1000;
+
+/** At most this many rows per sweep, so one run can never be a long-running write. */
+const ABANDON_SWEEP_LIMIT = 200;
+
+/**
+ * Cleans up abandoned rooms (spec §4).
+ *
+ * Deliberately *not* called from any gameplay path. It used to ride along with room
+ * creation, which meant opening a room silently rewrote unrelated rows — surprising
+ * during ordinary play, and worse during a test run, where creating rooms is routine.
+ * Housekeeping that changes data a player did not ask about belongs on its own
+ * schedule, so this is driven by the maintenance route instead.
+ *
+ * Failures are swallowed: a sweep that cannot run is not an error worth propagating.
+ */
+export async function sweepAbandonedGames(store: LobbyStore): Promise<number> {
+  try {
+    return await store.abortAbandonedGames({
+      olderThanMs: ABANDONED_GAME_AFTER_MS,
+      limit: ABANDON_SWEEP_LIMIT,
+    });
+  } catch {
+    return 0;
+  }
 }
 
 /** Spec §4: guests are never rated, so they queue in their own pool. */
@@ -223,7 +275,12 @@ export async function quickMatch(
    * race gets the result. Without this check the other player would re-queue on every
    * poll and never discover the game that was created for them.
    */
-  const alreadyMatched = await store.findActiveMatch(player.id);
+  const alreadyMatched = await store.findActiveMatch({
+    playerId: player.id,
+    // The same window that defines an abandoned game: past it, there is nothing
+    // left to rejoin.
+    resumableForMs: ABANDONED_GAME_AFTER_MS,
+  });
   if (alreadyMatched) {
     return { status: 'matched', seating: alreadyMatched };
   }

@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  ABANDONED_GAME_AFTER_MS,
   createRoom,
   joinRoom,
   poolFor,
   quickMatch,
+  sweepAbandonedGames,
   type LobbyPlayer,
   type LobbyStore,
   type QueuedPlayer,
@@ -29,6 +31,8 @@ function fakeStore(options: { collisions?: number } = {}) {
   >();
   const queue = new Map<string, { pool: string; rating: number; enqueuedAt: Date }>();
   const matches: { playerAId: string; playerBId: string; rated: boolean; id: string }[] = [];
+  const sweeps: { olderThanMs: number; limit: number }[] = [];
+  const resumes: { playerId: string; resumableForMs: number }[] = [];
 
   const store: LobbyStore = {
     createRoom: async ({ code, hostId }) => {
@@ -87,15 +91,20 @@ function fakeStore(options: { collisions?: number } = {}) {
       return { gameId: id };
     },
     findSeat: async () => null,
-    findActiveMatch: async (playerId) => {
+    findActiveMatch: async ({ playerId, resumableForMs }) => {
+      resumes.push({ playerId, resumableForMs });
       const found = [...matches]
         .reverse()
         .find((m) => m.playerAId === playerId || m.playerBId === playerId);
       return found ? { gameId: found.id, seat: found.playerAId === playerId ? 'a' : 'b' } : null;
     },
+    abortAbandonedGames: async (input) => {
+      sweeps.push(input);
+      return 0;
+    },
   };
 
-  return { store, rooms, queue, matches };
+  return { store, rooms, queue, matches, sweeps, resumes };
 }
 
 describe('room codes', () => {
@@ -154,6 +163,17 @@ describe('private rooms (spec §7.4)', () => {
 
     await createRoom(spy, HOST);
     expect(calls).toEqual([false]);
+  });
+
+  it('rewrites no other rows — housekeeping is not a side effect of playing', async () => {
+    // Opening a room used to sweep abandoned games along the way, which rewrote rows
+    // nobody had asked about, during ordinary play and during every test that opened
+    // a room. The sweep now belongs to the scheduled maintenance route alone.
+    const { store, sweeps } = fakeStore();
+
+    await createRoom(store, HOST);
+
+    expect(sweeps).toEqual([]);
   });
 
   it('lets a friend join by code and takes seat B', async () => {
@@ -380,5 +400,58 @@ describe('guests and rating (spec §4, OQ-6)', () => {
     await quickMatch(store, FRIEND);
 
     expect(matches[0]?.rated).toBe(true);
+  });
+});
+
+describe('starting another quick match', () => {
+  it('only resumes a game recent enough to still be running', async () => {
+    /**
+     * The bug this guards: a game row stays `live` until the realtime layer reports
+     * its result. When that report never landed, every attempt to start a new match
+     * handed the player their dead game back — which is what "the New match button
+     * does nothing" actually was.
+     */
+    const { store, resumes } = fakeStore();
+
+    await quickMatch(store, { id: 'player-1', isAnonymous: false, rating: 1500 });
+
+    expect(resumes).toHaveLength(1);
+    expect(resumes[0]?.resumableForMs).toBe(ABANDONED_GAME_AFTER_MS);
+  });
+
+  it('lets both players queue again independently after a match', async () => {
+    // Each player's next match is their own decision; neither waits for the other.
+    const { store } = fakeStore();
+    const one = { id: 'player-1', isAnonymous: false, rating: 1500 };
+    const two = { id: 'player-2', isAnonymous: false, rating: 1500 };
+
+    expect((await quickMatch(store, one)).status).toBe('queued');
+    const paired = await quickMatch(store, two);
+
+    expect(paired.status).toBe('matched');
+  });
+});
+
+describe('the abandoned-game sweep', () => {
+  it('closes games older than the window, in bounded batches', async () => {
+    const { store, sweeps } = fakeStore();
+
+    await sweepAbandonedGames(store);
+
+    expect(sweeps).toHaveLength(1);
+    expect(sweeps[0]?.olderThanMs).toBe(ABANDONED_GAME_AFTER_MS);
+    expect(sweeps[0]?.limit).toBeGreaterThan(0);
+  });
+
+  it('never lets a housekeeping failure surface to the caller', async () => {
+    const { store } = fakeStore();
+    const failing = {
+      ...store,
+      abortAbandonedGames: async () => {
+        throw new Error('database unavailable');
+      },
+    };
+
+    await expect(sweepAbandonedGames(failing)).resolves.toBe(0);
   });
 });

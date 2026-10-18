@@ -76,5 +76,29 @@ export function createLiveGameStore(database: Database = defaultDb): LiveGameSto
 
       return { completed: updated.length > 0 };
     },
+
+    async abort(input) {
+      /**
+       * The no-winner ending (spec §4): both players abandoned the match.
+       *
+       * Same compare-and-set shape as `complete`, so a retried report is harmless,
+       * and the same per-statement CHECK applies: Block 2's `games_status_coherent`
+       * requires an aborted game to carry an end time. `winner_id` stays null, which
+       * is what keeps the rating layer from finding anything to rate.
+       */
+      const updated = await database
+        .update(games)
+        .set({
+          status: 'aborted',
+          endedAt: new Date(),
+          resultReason: input.resultReason,
+          moveCount: input.moveCount,
+          boards: input.state,
+        })
+        .where(and(eq(games.id, input.gameId), eq(games.status, 'live')))
+        .returning({ id: games.id });
+
+      return { aborted: updated.length > 0 };
+    },
   };
 }

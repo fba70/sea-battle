@@ -388,13 +388,34 @@ describe('decodeGameState rejects corrupt payloads', () => {
     }
   });
 
-  it('rejects a finished game with no winner', () => {
-    const result = decodeGameState({ ...encodeGameState(finishedGame()), winner: null });
+  it('round-trips a finished game with no winner, because both players left', () => {
+    /**
+     * Spec §4's abandoned game. This used to be rejected, which made the state
+     * impossible to persist: the room could never be restored, so its result was
+     * never reported and its row stayed open for good. There is genuinely nobody to
+     * award the game to, and inventing a winner would pay someone for walking away.
+     */
+    const abandoned = { ...encodeGameState(finishedGame()), winner: null };
+    const result = decodeGameState(abandoned);
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.value).toMatchObject({
+      phase: 'finished',
+      winner: null,
+      turn: null,
+    });
+  });
+
+  it('still rejects a finished game with no reason', () => {
+    // However a game ended, it ended for a reason; a row without one is corrupt.
+    const result = decodeGameState({
+      ...encodeGameState(finishedGame()),
+      winner: null,
+      resultReason: null,
+    });
 
     expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.code).toBe('inconsistent_state');
-    }
+    expect(!result.ok && result.error.code).toBe('inconsistent_state');
   });
 
   it('rejects a placement-phase game that already has a winner', () => {

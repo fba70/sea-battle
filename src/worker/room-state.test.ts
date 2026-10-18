@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+/** A fixed server time, so the persisted clock is predictable. */
+const NOW = Date.UTC(2026, 9, 18, 12, 0, 0);
+
 import { encodeGameState, serializeGameState } from '@/game/codec';
 import { FLEET_A, FLEET_B } from '@/game/testing/fixtures';
 import { fireAll, startedGame } from '@/game/testing/harness';
@@ -17,7 +20,7 @@ const GAME_ID = 'game-under-test';
 const SEATS = { a: 'player-a', b: 'player-b' };
 
 function playedSession() {
-  const session = startSession(GAME_ID, SEATS);
+  const session = startSession(GAME_ID, SEATS, NOW);
   return {
     ...session,
     state: fireAll(startedGame(FLEET_A, FLEET_B), 'a', [{ x: 9, y: 9 }]),
@@ -109,6 +112,41 @@ describe('round trip', () => {
   });
 });
 
+describe('the game id survives a rehydrate', () => {
+  it('keeps the stored id rather than the Durable Object’s own', () => {
+    /**
+     * The regression: the object is evicted between moves, and every rehydrate used
+     * to overwrite the game id with the DO's own id — a hash of the game id that
+     * cannot be turned back into one. A match that ended after an eviction was then
+     * reported against an id the database had never seen, so the row never closed
+     * and matchmaking kept handing the finished game back to both players.
+     */
+    const stored = encodeRoom({
+      gameId: GAME_ID,
+      seats: SEATS,
+      session: startSession(GAME_ID, SEATS, NOW),
+      seq: { a: -1, b: -1 },
+    });
+
+    const restored = restoreRoom(stored, 'deadbeef00000000deadbeef00000000');
+
+    expect(restored.ok && restored.room.gameId).toBe(GAME_ID);
+    expect(restored.ok && restored.session?.gameId).toBe(GAME_ID);
+  });
+
+  it('falls back to the given id only when nothing is stored yet', () => {
+    const restored = restoreRoom(undefined, 'brand-new-room');
+    expect(restored.ok && restored.room.gameId).toBe('brand-new-room');
+  });
+
+  it('falls back when the stored id is empty', () => {
+    const stored = encodeRoom({ gameId: GAME_ID, seats: {}, session: null, seq: { a: -1, b: -1 } });
+    const restored = restoreRoom({ ...stored, gameId: '' }, 'fallback-id');
+
+    expect(restored.ok && restored.room.gameId).toBe('fallback-id');
+  });
+});
+
 describe('a corrupt or tampered room is refused, not guessed at', () => {
   const valid = () =>
     JSON.parse(
@@ -174,7 +212,7 @@ describe('a corrupt or tampered room is refused, not guessed at', () => {
 
 describe('startSession', () => {
   it('stamps the version and starts in placement', () => {
-    const session = startSession(GAME_ID, SEATS);
+    const session = startSession(GAME_ID, SEATS, NOW);
 
     expect(session.state.phase).toBe('placement');
     expect(session.seats).toEqual(SEATS);
@@ -184,7 +222,7 @@ describe('startSession', () => {
   it('draws the first turn from the runtime CSPRNG, not from the clients', () => {
     // Spec §9: the server owns all RNG. Over many draws both seats must appear.
     const draws = new Set(
-      Array.from({ length: 60 }, () => startSession(GAME_ID, SEATS).state.firstTurn),
+      Array.from({ length: 60 }, () => startSession(GAME_ID, SEATS, NOW).state.firstTurn),
     );
 
     expect(draws.size).toBe(2);

@@ -44,17 +44,28 @@ export interface CompleteLiveGameInput {
   readonly state: EncodedGameState;
 }
 
+/** A game that ended with no winner — see `abortLiveGame`'s note. */
+export interface AbortLiveGameInput {
+  readonly gameId: string;
+  readonly resultReason: string;
+  readonly moveCount: number;
+  readonly state: EncodedGameState;
+}
+
 export interface LiveGameStore {
   create(input: CreateLiveGameInput): Promise<{ readonly id: string }>;
   load(gameId: string): Promise<LiveGameRecord | null>;
   /** Compare-and-set on `status = 'live'`; false when the game was already completed. */
   complete(input: CompleteLiveGameInput): Promise<{ readonly completed: boolean }>;
+  /** Compare-and-set on `status = 'live'`; records a game that ended with no winner. */
+  abort(input: AbortLiveGameInput): Promise<{ readonly aborted: boolean }>;
 }
 
 export type CompleteReason =
   'game_not_found' | 'state_invalid' | 'not_finished' | 'missing_winner' | 'seat_not_seated';
 
 export type CompleteLiveGameOutcome =
+  | { readonly status: 'aborted' | 'already_aborted'; readonly gameId: string }
   | {
       readonly status: 'completed' | 'already_completed';
       readonly gameId: string;
@@ -117,8 +128,25 @@ export async function completeLiveGame(
   if (state.phase !== 'finished') {
     return { status: 'rejected', gameId: report.gameId, reason: 'not_finished' };
   }
-  if (state.winner === null || state.resultReason === null) {
+  if (state.resultReason === null) {
     return { status: 'rejected', gameId: report.gameId, reason: 'missing_winner' };
+  }
+
+  /**
+   * A finished game with no winner is the both-players-abandoned case (spec §4,
+   * agreed product rule). It is recorded as `aborted` rather than `completed`, and
+   * the rating processor is never invoked: there is no result to rate, and handing
+   * a rated win to one of two players who both walked away would be arbitrary.
+   */
+  if (state.winner === null) {
+    const { aborted } = await store.abort({
+      gameId: report.gameId,
+      resultReason: state.resultReason,
+      moveCount: state.moveCount,
+      state: report.state,
+    });
+
+    return { status: aborted ? 'aborted' : 'already_aborted', gameId: report.gameId };
   }
 
   // The seat the game says won must map to a player this row actually seats.

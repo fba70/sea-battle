@@ -15,6 +15,7 @@ import {
 import {
   completeLiveGame,
   createLiveGame,
+  type AbortLiveGameInput,
   type CompleteLiveGameInput,
   type CreateLiveGameInput,
   type LiveGameRecord,
@@ -39,9 +40,12 @@ function liveRecord(overrides: Partial<LiveGameRecord> = {}): LiveGameRecord {
   return { id: GAME_ID, playerAId: PLAYER_A, playerBId: PLAYER_B, status: 'live', ...overrides };
 }
 
-function fakeStore(options: { game?: LiveGameRecord | null; completed?: boolean } = {}) {
+function fakeStore(
+  options: { game?: LiveGameRecord | null; completed?: boolean; aborted?: boolean } = {},
+) {
   const created: CreateLiveGameInput[] = [];
   const completions: CompleteLiveGameInput[] = [];
+  const aborts: AbortLiveGameInput[] = [];
   const store: LiveGameStore = {
     create: async (input) => {
       created.push(input);
@@ -52,8 +56,12 @@ function fakeStore(options: { game?: LiveGameRecord | null; completed?: boolean 
       completions.push(input);
       return { completed: options.completed ?? true };
     },
+    abort: async (input) => {
+      aborts.push(input);
+      return { aborted: options.aborted ?? true };
+    },
   };
-  return { store, created, completions };
+  return { store, created, completions, aborts };
 }
 
 function fakeRating(status: RatingOutcome['status'] = 'applied') {

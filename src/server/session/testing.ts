@@ -28,6 +28,25 @@ export function send(
   return applyIntent(session, playerId, { seq, intent });
 }
 
+/** A fixed, readable starting instant for clock tests. */
+export const T0 = Date.UTC(2026, 9, 18, 12, 0, 0);
+
+/** A session whose clock is running, as the Durable Object creates one. */
+export function newTimedSession(now: number = T0, firstTurn: PlayerSlot = 'a'): GameSession {
+  return createSession({ gameId: GAME_ID, seats: { a: PLAYER_A, b: PLAYER_B }, firstTurn, now });
+}
+
+/** `send`, but with a server time attached so deadlines move. */
+export function sendAt(
+  session: GameSession,
+  playerId: string,
+  intent: ClientIntent,
+  seq: number,
+  now: number,
+): SessionOutcome {
+  return applyIntent(session, playerId, { seq, intent }, now);
+}
+
 function mustAccept(outcome: SessionOutcome, what: string): GameSession {
   if (outcome.status !== 'accepted') {
     throw new Error(`fixture setup failed at ${what}: ${outcome.error?.code ?? outcome.status}`);

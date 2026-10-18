@@ -10,6 +10,15 @@ const serverEnvSchema = z.object({
    * the Worker's own env — see .env.worker.example.
    */
   GAME_TICKET_SECRET: z.string().min(32, 'GAME_TICKET_SECRET must be at least 32 characters'),
+  /**
+   * Authorises the scheduled maintenance route (spec §4's abandoned-game cleanup).
+   *
+   * Optional on purpose, and the route refuses to run without it: an unset secret
+   * means no scheduled job exists yet, and a maintenance endpoint that anyone can
+   * trigger is worse than one that is switched off. Vercel's scheduler sends it as
+   * `Authorization: Bearer <CRON_SECRET>`.
+   */
+  CRON_SECRET: z.string().min(16).optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
@@ -61,8 +70,10 @@ function loadServerEnv(): ServerEnv {
 
   // Keep whatever the environment does define; fill only the gaps, then re-validate
   // so a malformed (rather than missing) value still fails loudly.
+  // Keyed off the schema rather than the fallbacks, so an optional variable with no
+  // placeholder (CRON_SECRET) is still carried through when it is set.
   const provided = Object.fromEntries(
-    Object.keys(developmentFallbacks)
+    Object.keys(serverEnvSchema.shape)
       .map((key) => [key, process.env[key]] as const)
       .filter(([, value]) => value !== undefined && value !== ''),
   );

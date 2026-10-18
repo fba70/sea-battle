@@ -61,6 +61,12 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
     setState({ phase: 'searching', pool: result.pool });
   }, []);
 
+  const startSearching = useCallback(() => {
+    searching.current = true;
+    setState({ phase: 'searching', pool: null });
+    void poll();
+  }, [poll]);
+
   useEffect(() => {
     if (state.phase !== 'searching') {
       return;
@@ -109,7 +115,16 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
   }, []);
 
   if (state.phase === 'matched') {
-    return <LiveMatchScreen gameId={state.gameId} wsUrl={wsUrl} />;
+    return (
+      <LiveMatchScreen
+        gameId={state.gameId}
+        wsUrl={wsUrl}
+        // Back into the queue without a navigation: this screen *is* /play/quick, so
+        // there is nowhere to link to. Dropping the matched state unmounts the
+        // finished game and its socket with it, leaving nothing stale behind.
+        onNewMatch={startSearching}
+      />
+    );
   }
 
   return (
@@ -121,15 +136,7 @@ export function QuickMatch({ wsUrl }: { readonly wsUrl: string }) {
           description={t('idleHint')}
           actions={
             <>
-              <Button
-                type="button"
-                className="flex-1"
-                onClick={() => {
-                  searching.current = true;
-                  setState({ phase: 'searching', pool: null });
-                  void poll();
-                }}
-              >
+              <Button type="button" className="flex-1" onClick={startSearching}>
                 {t('start')}
               </Button>
               <Button asChild variant="outline" className="flex-1">

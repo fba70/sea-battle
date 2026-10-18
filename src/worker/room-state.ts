@@ -11,6 +11,7 @@
  */
 import { decodeGameState, encodeGameState, type EncodedGameState } from '@/game/codec';
 import type { PlayerSlot } from '@/game/types';
+import { IDLE_CLOCK, type SessionClock } from '@/server/session/clock';
 import {
   createSession,
   restoreSequencing,
@@ -41,6 +42,21 @@ export interface PersistedRoom {
    * can be retried the next time this room wakes.
    */
   readonly reported: boolean;
+  /**
+   * Deadlines, missed turns and who is away (spec §4).
+   *
+   * Optional so a room written before Block 9 still restores: an absent clock simply
+   * has no deadlines running, and the next move starts one.
+   */
+  readonly clock?: SessionClock;
+  /**
+   * Failed attempts to report the finished match.
+   *
+   * Only meaningful while `reported` is false. A game can now end with nobody
+   * connected — both players walked away — so there may be no later message to
+   * piggyback a retry on; this bounds the retries the room books for itself.
+   */
+  readonly reportAttempts?: number;
 }
 
 export const EMPTY_ROOM = (gameId: string): PersistedRoom => ({
@@ -51,6 +67,8 @@ export const EMPTY_ROOM = (gameId: string): PersistedRoom => ({
   revision: 0,
   seq: { a: -1, b: -1 },
   reported: false,
+  clock: IDLE_CLOCK,
+  reportAttempts: 0,
 });
 
 export function encodeRoom(room: {
@@ -59,6 +77,7 @@ export function encodeRoom(room: {
   session: GameSession | null;
   seq: Readonly<Record<PlayerSlot, number>>;
   reported?: boolean;
+  reportAttempts?: number;
 }): PersistedRoom {
   return {
     v: ROOM_STATE_VERSION,
@@ -68,6 +87,31 @@ export function encodeRoom(room: {
     revision: room.session?.revision ?? 0,
     seq: room.seq,
     reported: room.reported ?? false,
+    clock: room.session?.clock ?? IDLE_CLOCK,
+    reportAttempts: room.reportAttempts ?? 0,
+  };
+}
+
+/** Reads back a stored clock, falling back to an idle one rather than trusting junk. */
+function restoreClock(raw: unknown): SessionClock {
+  if (typeof raw !== 'object' || raw === null) {
+    return IDLE_CLOCK;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const number = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
+  const counter = (value: unknown): number =>
+    typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : 0;
+
+  const missed = (record.missedTurns ?? {}) as Record<string, unknown>;
+  const offline = (record.offlineSince ?? {}) as Record<string, unknown>;
+
+  return {
+    deadline: number(record.deadline),
+    remainingMs: number(record.remainingMs),
+    missedTurns: { a: counter(missed.a), b: counter(missed.b) },
+    offlineSince: { a: number(offline.a), b: number(offline.b) },
   };
 }
 
@@ -85,9 +129,9 @@ function isSeatId(value: unknown): value is string {
  * The game state is decoded with the Block 1 codec, which re-runs both fleets through
  * `validateFleet`, so a corrupted or tampered blob cannot produce an illegal board.
  */
-export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
+export function restoreRoom(raw: unknown, fallbackGameId: string): RestoreResult {
   if (raw === undefined || raw === null) {
-    return { ok: true, room: EMPTY_ROOM(gameId), session: null };
+    return { ok: true, room: EMPTY_ROOM(fallbackGameId), session: null };
   }
 
   if (typeof raw !== 'object') {
@@ -112,6 +156,22 @@ export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
   };
 
   const revision = typeof record.revision === 'number' ? record.revision : 0;
+  const clock = restoreClock(record.clock);
+
+  /**
+   * The stored id wins.
+   *
+   * The caller's fallback is the Durable Object's own id, which is a hash of the
+   * game id and cannot be turned back into one. Using it here overwrote the real
+   * game id on every rehydrate — which happens constantly, because the object is
+   * evicted between moves — and the match result was then reported against an id
+   * the database had never seen. A game that ended after an eviction was therefore
+   * never recorded: its row stayed open, and matchmaking kept handing the finished
+   * game back to both players.
+   */
+  const gameId =
+    typeof record.gameId === 'string' && record.gameId.length > 0 ? record.gameId : fallbackGameId;
+
   const room: PersistedRoom = {
     v: ROOM_STATE_VERSION,
     gameId,
@@ -120,6 +180,11 @@ export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
     revision,
     seq,
     reported: record.reported === true,
+    clock,
+    reportAttempts:
+      typeof record.reportAttempts === 'number' && record.reportAttempts >= 0
+        ? record.reportAttempts
+        : 0,
   };
 
   if (room.state === null) {
@@ -136,7 +201,13 @@ export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
   }
 
   const session = restoreSequencing(
-    resumeSession({ gameId, seats: { a: seats.a, b: seats.b }, state: decoded.value, revision }),
+    resumeSession({
+      gameId,
+      seats: { a: seats.a, b: seats.b },
+      state: decoded.value,
+      revision,
+      clock,
+    }),
     seq,
   );
 
@@ -149,10 +220,16 @@ export function restoreRoom(raw: unknown, gameId: string): RestoreResult {
  * Spec §9: "server owns all timers and RNG" — which seat moves first is drawn here,
  * from the runtime's CSPRNG, and then fixed for the life of the game by persistence.
  */
-export function startSession(gameId: string, seats: { a: string; b: string }): GameSession {
+export function startSession(
+  gameId: string,
+  seats: { a: string; b: string },
+  now: number,
+): GameSession {
   const draw = new Uint8Array(1);
   crypto.getRandomValues(draw);
   const firstTurn: PlayerSlot = (draw[0] as number) % 2 === 0 ? 'a' : 'b';
 
-  return createSession({ gameId, seats, firstTurn });
+  // `now` starts the placement clock (spec §4): the game is created the moment both
+  // seats are bound, and that is when the 60 seconds begin.
+  return createSession({ gameId, seats, firstTurn, now });
 }

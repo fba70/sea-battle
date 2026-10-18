@@ -372,7 +372,8 @@ describe('illegal intents are safe (spec §9, §10)', () => {
       label: 'an intent the session does not implement yet',
       build: () => startedSession(),
       player: PLAYER_A,
-      message: { seq: 1, intent: { type: 'resign' } },
+      // Reactions are Block 11; resign is handled as of Block 9.
+      message: { seq: 1, intent: { type: 'react', emoji: 'gg' } },
       code: 'unsupported_intent',
     },
     {

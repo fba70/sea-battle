@@ -3,7 +3,11 @@ import { DurableObject } from 'cloudflare:workers';
 
 import type { PlayerSlot } from '@/game/types';
 import {
+  advanceClock,
   applyIntent,
+  nextWakeAt,
+  noteDisconnected,
+  noteReconnected,
   seatOf,
   snapshotFor,
   type GameSession,
@@ -24,6 +28,27 @@ import {
 import type { Env } from './env';
 
 const ROOM_KEY = 'room';
+
+/**
+ * The seed for the fleet placed when the placement clock runs out.
+ *
+ * SECURITY: drawn from the runtime's CSPRNG, never derived from the game id or the
+ * revision. Both players know the game id, so a derived seed would let an opponent
+ * reproduce the exact fleet the server placed for someone who ran out of time and
+ * sink it without searching. Spec §9: "server owns all timers and RNG".
+ *
+ * Nothing is lost by not being reproducible — the fleet is persisted the moment it
+ * is placed, so a restart reads it back rather than regenerating it.
+ */
+function autoPlaceSeed(): number {
+  const draw = new Uint32Array(1);
+  crypto.getRandomValues(draw);
+  return draw[0] as number;
+}
+
+/** How long to wait before retrying a result report, and how many times to try. */
+const RESULT_RETRY_MS = 60_000;
+const MAX_RESULT_ATTEMPTS = 5;
 
 /** Attached to each socket so the seat survives hibernation. */
 interface SocketIdentity {
@@ -92,6 +117,20 @@ export class GameRoom extends DurableObject<Env> {
       playerId: ticket.claims.playerId,
     };
     server.serializeAttachment(identity);
+
+    // Coming back inside the grace window resumes the match (spec §4): the clock
+    // restarts with the time that was left on it and the opponent is told.
+    if (this.session && this.session.clock.offlineSince[ticket.claims.seat] !== null) {
+      const resumed = noteReconnected(this.session, ticket.claims.seat, Date.now());
+      this.session = resumed.session;
+      await this.persist();
+      this.broadcast(resumed.events);
+      await this.armAlarm();
+    }
+
+    // Opening a game whose result never reached the app is the moment to try again.
+    // No-ops for anything unfinished or already reported.
+    await this.reportResultIfFinished();
 
     // A fresh snapshot on every connect is what makes reconnection safe: the client is
     // never asked to reconcile, it is simply told the authoritative truth.
@@ -178,11 +217,14 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    const outcome = applyIntent(this.session, identity.playerId, parsed.message);
+    // `Date.now()` is read here and handed in: the session itself never reads a clock,
+    // so every deadline it sets is the server's and nothing a client sends can move it.
+    const outcome = applyIntent(this.session, identity.playerId, parsed.message, Date.now());
 
     if (outcome.session !== this.session) {
       this.session = outcome.session;
       await this.persist();
+      await this.armAlarm();
     }
 
     this.broadcast(outcome.events);
@@ -192,18 +234,124 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   override async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
-    // Reconnection is simply a new connection presenting the same ticket, which is
-    // answered with a fresh snapshot. Grace windows and disconnect forfeits are spec §4
-    // timer work and belong to a later block.
     try {
       ws.close(code === 1006 ? 1000 : code, reason);
     } catch {
       // Already closed; nothing to do.
     }
+
+    await this.noteSocketGone(ws);
   }
 
-  override async webSocketError(): Promise<void> {
-    // Nothing to clean up: authoritative state lives in storage, not on the socket.
+  override async webSocketError(ws: WebSocket): Promise<void> {
+    // Authoritative state lives in storage, so there is nothing to clean up — but a
+    // socket that errored is a socket that is gone, and the grace window starts now.
+    await this.noteSocketGone(ws);
+  }
+
+  /**
+   * Starts the grace window once a seat has no live socket left (spec §4).
+   *
+   * A player may legitimately hold more than one connection for a moment — a reload
+   * overlaps the old socket and the new one — so this only counts as a disconnect
+   * when nothing of theirs is still open.
+   */
+  private async noteSocketGone(ws: WebSocket): Promise<void> {
+    await this.load();
+
+    const identity = ws.deserializeAttachment() as SocketIdentity | null;
+    if (!identity || !this.session) {
+      return;
+    }
+
+    const stillOpen = this.ctx
+      .getWebSockets(identity.seat)
+      .filter((socket) => socket !== ws && socket.readyState === WebSocket.READY_STATE_OPEN);
+
+    if (stillOpen.length > 0) {
+      return;
+    }
+
+    const dropped = noteDisconnected(this.session, identity.seat, Date.now());
+    if (!dropped.changed) {
+      return;
+    }
+
+    this.session = dropped.session;
+    await this.persist();
+    this.broadcast(dropped.events);
+    await this.armAlarm();
+  }
+
+  /**
+   * A deadline came due (spec §4).
+   *
+   * Everything about *which* deadline and *what it means* is the session's; this only
+   * supplies the time, routes what comes back and books the next wake-up. One action
+   * per wake is enough because each one either ends the game or sets a fresh deadline.
+   */
+  override async alarm(): Promise<void> {
+    await this.load();
+
+    const session = this.session;
+    if (!session) {
+      return;
+    }
+
+    const advanced = advanceClock(session, Date.now(), { seed: autoPlaceSeed() });
+
+    if (advanced.changed) {
+      this.session = advanced.session;
+      await this.persist();
+      this.broadcast(advanced.events);
+      await this.reportResultIfFinished();
+      await this.armAlarm();
+      return;
+    }
+
+    // Nothing was due — but this wake-up may *be* the retry of a result that never
+    // reached the app. Attempting it unconditionally is what makes that retry real;
+    // it no-ops for a game that is unfinished or already reported.
+    await this.reportResultIfFinished();
+
+    /**
+     * Re-arm only for a wake-up that is genuinely ahead: booking one for an instant
+     * that has already passed and produced no action would make this object wake
+     * itself in a tight loop, which on the free plan is the one failure mode worth
+     * engineering against.
+     */
+    const at = nextWakeAt(session);
+    if (at !== null && at > Date.now()) {
+      await this.ctx.storage.setAlarm(at);
+      return;
+    }
+
+    await this.armAlarm();
+  }
+
+  /** Books the next wake-up, or cancels it when there is nothing left to wait for. */
+  private async armAlarm(): Promise<void> {
+    const at = this.session ? nextWakeAt(this.session) : null;
+
+    if (at === null) {
+      /**
+       * A finished game has no deadlines left, but it may still owe the Next app its
+       * result. Before Block 9 the player who ended the game was always connected, so
+       * the next message retried a failed report; a game can now end with both players
+       * gone, and then nothing would ever wake this room again. So the retry books its
+       * own wake-up, a bounded number of times.
+       */
+      if (this.shouldRetryReport()) {
+        await this.ctx.storage.setAlarm(Date.now() + RESULT_RETRY_MS);
+        return;
+      }
+
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
+
+    // Never in the past: a deadline that has already passed should fire immediately.
+    await this.ctx.storage.setAlarm(Math.max(at, Date.now() + 1));
   }
 
   // -------------------------------------------------------------------------
@@ -243,6 +391,7 @@ export class GameRoom extends DurableObject<Env> {
         b: this.session?.clients.b.lastAcceptedSeq ?? room.seq.b,
       },
       reported: room.reported,
+      reportAttempts: room.reportAttempts ?? 0,
     });
 
     this.room = next;
@@ -281,7 +430,8 @@ export class GameRoom extends DurableObject<Env> {
     this.room = { ...room, gameId, seats };
 
     if (!this.session && seats.a !== undefined && seats.b !== undefined) {
-      this.session = startSession(gameId, { a: seats.a, b: seats.b });
+      // Creating the session starts spec §4's placement clock.
+      this.session = startSession(gameId, { a: seats.a, b: seats.b }, Date.now());
     }
 
     await this.persist();
@@ -294,6 +444,11 @@ export class GameRoom extends DurableObject<Env> {
         }
       }
     }
+
+    // The placement clock starts with the session, so the wake-up has to be booked
+    // here too — otherwise two players who both sit still would wait out a deadline
+    // that never fires, because nothing else would wake this object.
+    await this.armAlarm();
 
     return { ok: true };
   }
@@ -341,6 +496,18 @@ export class GameRoom extends DurableObject<Env> {
    * dropped report is retried the next time this room wakes rather than being lost —
    * and the receiving end is idempotent, so a duplicate is harmless either way.
    */
+  /** Whether a finished game still owes a report, and is allowed another attempt. */
+  private shouldRetryReport(): boolean {
+    const room = this.room;
+    return (
+      this.env.GAME_RESULT_URL !== undefined &&
+      room !== null &&
+      !room.reported &&
+      (room.reportAttempts ?? 0) < MAX_RESULT_ATTEMPTS &&
+      this.session?.state.phase === 'finished'
+    );
+  }
+
   private async reportResultIfFinished(): Promise<void> {
     const room = this.room;
     const session = this.session;
@@ -368,14 +535,25 @@ export class GameRoom extends DurableObject<Env> {
       });
 
       if (!response.ok) {
+        await this.recordFailedReport();
         return;
       }
 
-      this.room = { ...room, reported: true };
+      this.room = { ...room, reported: true, reportAttempts: 0 };
       await this.persist();
     } catch {
-      // Left unreported on purpose; the next message or reconnect retries.
+      // Left unreported on purpose; `armAlarm` books the retry.
+      await this.recordFailedReport();
     }
+  }
+
+  private async recordFailedReport(): Promise<void> {
+    const room = this.room;
+    if (!room) {
+      return;
+    }
+    this.room = { ...room, reportAttempts: (room.reportAttempts ?? 0) + 1 };
+    await this.persist();
   }
 
   private sendTo(ws: WebSocket, event: ServerEvent): void {

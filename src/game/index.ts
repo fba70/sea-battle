@@ -13,6 +13,7 @@
  * SECURITY: `GameState` holds BOTH fleets. Never serialise it to a client —
  * send `createPlayerView(state, slot)` (or `createPublicView(state)`) instead.
  */
+export * from './abandon';
 export * from './autoplace';
 // Server-side only: `codec` encodes BOTH fleets. See its module header.
 export * from './codec';

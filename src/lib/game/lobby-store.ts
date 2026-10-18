@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
 
 import { db as defaultDb } from '../db';
 import { games, matchmakingQueue, CLASSIC_RULESET } from '../db/schema/game';
@@ -181,9 +181,10 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
       return { gameId: row.id };
     },
 
-    async findActiveMatch(playerId: string): Promise<Seating | null> {
+    async findActiveMatch({ playerId, resumableForMs }): Promise<Seating | null> {
       // Most recent first: a player who abandoned an older game and queued again
-      // should land in the newer one.
+      // should land in the newer one. The age bound is what stops a game whose
+      // result never reached the database from pinning the player to it forever.
       const rows = await database
         .select({ id: games.id, playerAId: games.playerAId, playerBId: games.playerBId })
         .from(games)
@@ -191,6 +192,7 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
           and(
             eq(games.type, 'quickmatch'),
             eq(games.status, 'live'),
+            gt(games.startedAt, new Date(Date.now() - resumableForMs)),
             or(eq(games.playerAId, playerId), eq(games.playerBId, playerId)),
           ),
         )
@@ -202,6 +204,30 @@ export function createLobbyStore(database: Database = defaultDb): LobbyStore {
         return null;
       }
       return { gameId: row.id, seat: row.playerAId === playerId ? 'a' : 'b' };
+    },
+
+    async abortAbandonedGames({ olderThanMs, limit }): Promise<number> {
+      /**
+       * Writes off games that were left open (spec §4).
+       *
+       * Scoped by `started_at` rather than by any notion of activity, because a row
+       * nobody ever joined has none. The inner select bounds the work; Block 2's
+       * `games_status_coherent` requires an aborted game to carry an end time, and
+       * `result_reason` stays null because nothing actually happened.
+       */
+      const result = await database.execute(sql`
+        update ${games}
+        set ${sql.identifier('status')} = 'aborted', ${sql.identifier('ended_at')} = now()
+        where ${games.id} in (
+          select ${games.id} from ${games}
+          where ${games.status} = 'live'
+            and ${games.startedAt} < now() - ${sql.raw(`interval '${olderThanMs} milliseconds'`)}
+          limit ${limit}
+        )
+        returning ${games.id}
+      `);
+
+      return (result.rows ?? []).length;
     },
 
     async findSeat({ gameId, playerId }): Promise<Seating | null> {
