@@ -161,6 +161,13 @@ const SOUNDS = {
     tone(0.4, { from: 247, gain: 0.22, curve: 2 }),
   ),
 
+  // An incoming reaction: a soft two-note blip, quieter than anything in play so it
+  // never competes with a shot. Spec §7.2 lists an emoji-reaction effect.
+  reaction: sequence(
+    tone(0.05, { from: 660, gain: 0.1, curve: 5 }),
+    tone(0.07, { from: 880, gain: 0.09, curve: 5 }),
+  ),
+
   // Generic UI tick for buttons.
   click: mix(
     tone(0.05, { from: 900, to: 700, gain: 0.12, curve: 6 }),

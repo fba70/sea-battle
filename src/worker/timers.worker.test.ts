@@ -261,6 +261,43 @@ describe('resigning', () => {
   });
 });
 
+describe('reactions', () => {
+  it('reaches both players, naming who sent it', async () => {
+    const { a, b } = await startedMatch();
+
+    a.send({ type: 'react', emoji: '🔥' } as never, 1);
+    await settle();
+
+    const expected = { type: 'reaction', from: 'a', emoji: '🔥' };
+    expect(a.received).toContainEqual(expected);
+    expect(b.received).toContainEqual(expected);
+  });
+
+  it('refuses anything outside the fixed set', async () => {
+    const { a, b } = await startedMatch();
+
+    a.send({ type: 'react', emoji: '💩' } as never, 1);
+    await settle();
+
+    // The vocabulary is the moderation strategy: nothing unknown is ever relayed.
+    expect(b.received.some((event) => event.type === 'reaction')).toBe(false);
+    expect(a.received.some((event) => event.type === 'error')).toBe(true);
+  });
+
+  it('stops a flood without telling the opponent about it', async () => {
+    const { a, b } = await startedMatch();
+
+    for (let n = 0; n < 8; n += 1) {
+      a.send({ type: 'react', emoji: '😂' } as never, n + 1);
+    }
+    await settle();
+
+    const relayed = b.received.filter((event) => event.type === 'reaction');
+    expect(relayed.length).toBeGreaterThan(0);
+    expect(relayed.length).toBeLessThanOrEqual(3);
+  });
+});
+
 describe('the rating after a rated match', () => {
   /** Stands in for what the app answers the result report with. */
   const REPORT = {

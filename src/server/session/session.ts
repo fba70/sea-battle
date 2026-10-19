@@ -46,6 +46,7 @@ import {
   MAX_MISSED_TURNS,
   type SessionClock,
 } from './clock';
+import { REACTION_BURST, REACTION_REFILL_MS, type Reaction } from './reactions';
 import {
   parseClientMessage,
   type ClientIntent,
@@ -79,6 +80,33 @@ export interface ClientSequencing {
 /** Events addressed by seat. Each seat's list is derived independently. */
 export type SessionEvents = Readonly<Record<PlayerSlot, readonly ServerEvent[]>>;
 
+/**
+ * One seat's reaction budget (spec §10: the server owns spam prevention).
+ *
+ * A token bucket, carried in the session so it survives the transport restarting
+ * and so the rule is testable without one. Like everything else here it is told the
+ * time rather than reading it.
+ */
+export interface ReactionBudget {
+  readonly tokens: number;
+  readonly refilledAt: number;
+}
+
+const FULL_BUDGET: ReactionBudget = { tokens: REACTION_BURST, refilledAt: 0 };
+
+/** Refills by elapsed time, capped at the burst size. */
+function refill(budget: ReactionBudget, now: number): ReactionBudget {
+  if (budget.refilledAt === 0) {
+    return { tokens: REACTION_BURST, refilledAt: now };
+  }
+
+  const earned = Math.max(0, now - budget.refilledAt) / REACTION_REFILL_MS;
+  return {
+    tokens: Math.min(REACTION_BURST, budget.tokens + earned),
+    refilledAt: now,
+  };
+}
+
 export interface GameSession {
   readonly gameId: string;
   /** Authoritative, both fleets. Never send this anywhere. */
@@ -92,6 +120,8 @@ export interface GameSession {
   readonly clients: Readonly<Record<PlayerSlot, ClientSequencing>>;
   /** Deadlines, missed turns and who is away (spec §4). Never read from a real clock. */
   readonly clock: SessionClock;
+  /** Per-seat reaction allowance (spec §7.4, §10). */
+  readonly reactions: Readonly<Record<PlayerSlot, ReactionBudget>>;
 }
 
 export type SessionStatus = 'accepted' | 'rejected' | 'replayed';
@@ -142,6 +172,7 @@ export function createSession(options: {
     revision: 0,
     clients: { a: FRESH_CLIENT, b: FRESH_CLIENT },
     clock: options.now === undefined ? IDLE_CLOCK : restart(IDLE_CLOCK, state, options.now),
+    reactions: { a: FULL_BUDGET, b: FULL_BUDGET },
   };
 }
 
@@ -169,6 +200,9 @@ export function resumeSession(options: {
     revision: options.revision ?? 0,
     clients: { a: FRESH_CLIENT, b: FRESH_CLIENT },
     clock: options.clock ?? IDLE_CLOCK,
+    // A resumed session starts with a full allowance: the budget is spam control,
+    // not a score to carry across a reconnect.
+    reactions: { a: FULL_BUDGET, b: FULL_BUDGET },
   };
 }
 
@@ -521,6 +555,55 @@ function handleResign(session: GameSession, seat: PlayerSlot, seq: number): Sess
   return accept(session, seat, seq, next, endEvents(next, revision, clock), clock);
 }
 
+/**
+ * Relays a reaction to both players (spec §7.4).
+ *
+ * Deliberately not a move: no board changes, the revision does not advance, and the
+ * move clock is untouched — reacting must never buy a player time.
+ *
+ * Rate limiting is here rather than in the client because a client cannot be asked
+ * to restrain itself (spec §10). A refused reaction is an honest rejection; the UI
+ * chooses to stay quiet about it.
+ */
+function handleReact(
+  session: GameSession,
+  seat: PlayerSlot,
+  seq: number,
+  emoji: Reaction,
+  now: number | undefined,
+): SessionOutcome {
+  if (session.state.phase === 'finished') {
+    return reject(session, seat, 'wrong_phase', 'The match is over');
+  }
+
+  // With no clock to measure against, every reaction is allowed; only a test runs
+  // that way, and it is testing something else.
+  const budget = now === undefined ? null : refill(session.reactions[seat], now);
+
+  if (budget !== null && budget.tokens < 1) {
+    return reject(session, seat, 'rate_limited', 'Too many reactions, too quickly');
+  }
+
+  const events = forEachSeat<readonly ServerEvent[]>(() => [
+    { type: 'reaction', from: seat, emoji },
+  ]);
+
+  const next: GameSession = {
+    ...session,
+    clients: { ...session.clients, [seat]: { lastAcceptedSeq: seq, lastEvents: events } },
+    ...(budget === null
+      ? {}
+      : {
+          reactions: {
+            ...session.reactions,
+            [seat]: { tokens: budget.tokens - 1, refilledAt: budget.refilledAt },
+          },
+        }),
+  };
+
+  return { status: 'accepted', session: next, error: null, events };
+}
+
 /** `game_over` plus a fresh snapshot, for every way a game can end outside `fire`. */
 function endEvents(next: GameState, revision: number, clock: SessionClock): SessionEvents {
   return forEachSeat<readonly ServerEvent[]>((seat) => [
@@ -597,13 +680,7 @@ export function applyIntent(
     case 'resign':
       return handleResign(session, seat, seq);
     case 'react':
-      // Reactions are Block 11.
-      return reject(
-        session,
-        seat,
-        'unsupported_intent',
-        `The session layer does not handle '${intent.type}' yet`,
-      );
+      return handleReact(session, seat, seq, intent.emoji, now);
     case 'join':
     case 'heartbeat':
       // Connection lifecycle: the transport adapter's job once OQ-2 is settled.

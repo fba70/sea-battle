@@ -32,8 +32,12 @@ test.beforeEach(() => {
   test.skip(!workerUp, `realtime Worker not reachable at ${WORKER_URL} — run npm run worker:dev`);
 });
 
-// Two browser sessions, a socket each, and a match played out between them.
-test.setTimeout(300_000);
+/**
+ * Two browser sessions, a socket each, and a match played out shot by shot. Slow by
+ * nature, and slower again when the rest of the suite is loading the dev server
+ * alongside it, so the budget is generous rather than tight.
+ */
+test.setTimeout(600_000);
 
 /** Placed hulls only — the drag preview is a rect too, tagged `ghost`. */
 async function hullCount(page: Page): Promise<number> {
@@ -93,7 +97,12 @@ async function playToTheEnd(one: Page, two: Page): Promise<void> {
     [one, 0],
     [two, 99],
   ]);
-  const deadline = Date.now() + 240_000;
+  /** Cells each player has already fired at, so the test stops re-checking them. */
+  const tried = new Map<Page, Set<number>>([
+    [one, new Set()],
+    [two, new Set()],
+  ]);
+  const deadline = Date.now() + 480_000;
 
   while (Date.now() < deadline) {
     if ((await one.getByText(/victory|defeated/i).count()) > 0) {
@@ -108,20 +117,29 @@ async function playToTheEnd(one: Page, two: Page): Promise<void> {
     }
 
     const step = mover === one ? 1 : -1;
+    const seen = tried.get(mover) as Set<number>;
     let cursor = next.get(mover) as number;
 
-    // Skip cells this player has already fired at — the server rejects repeats.
     while (cursor >= 0 && cursor <= 99) {
+      if (seen.has(cursor)) {
+        cursor += step;
+        continue;
+      }
+
       const cell = mover
         .getByRole('grid')
         .first()
         .locator(`[data-cell="${cursor % 10},${Math.floor(cursor / 10)}"]`);
 
+      // A cell can also be disabled because a sink revealed it as empty.
       if (await cell.isEnabled()) {
         await cell.click();
+        seen.add(cursor);
         cursor += step;
         break;
       }
+
+      seen.add(cursor);
       cursor += step;
     }
 

@@ -15,7 +15,8 @@ export const SFX_SPRITE = {
   yourTurn: [1940, 230],
   victory: [2230, 660],
   defeat: [2950, 760],
-  click: [3770, 50],
+  reaction: [3770, 120],
+  click: [3950, 50],
 } as const;
 
 export type SoundId = keyof typeof SFX_SPRITE;

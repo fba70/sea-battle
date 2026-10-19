@@ -351,6 +351,19 @@
     "rating": {
       "unrated": "This game was unrated.",
       "provisional": "{played} of {total} rated matches — {remaining, plural, =1 {# more to be ranked} other {# more to be ranked}}."
+    },
+    "reactions": {
+      "label": "Send a reaction",
+      "sentAnnounce": "You reacted: {emoji}",
+      "receivedAnnounce": "Your opponent reacted: {emoji}",
+      "emoji": {
+        "applause": "Applause",
+        "surprise": "Surprise",
+        "laugh": "Laughing",
+        "fire": "On fire",
+        "sob": "Crying",
+        "salute": "Salute"
+      }
     }
   },
   "leaderboard": {

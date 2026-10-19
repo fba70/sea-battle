@@ -4,9 +4,20 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ensureGuestSession } from '@/lib/guest-session';
 import type { ClientIntent, ServerEvent, SnapshotTimers } from '@/server/session/protocol';
+import type { Reaction } from '@/server/session/reactions';
 
 /** What the server says this match did to the viewer's rating (spec §7.6). */
 export type RatingOutcome = Extract<ServerEvent, { type: 'rating_applied' }>;
+
+/** A reaction the server relayed, with an id so the animation can track it. */
+export interface LiveReaction {
+  readonly id: number;
+  readonly emoji: Reaction;
+  readonly from: PlayerSlot;
+}
+
+/** Matches the float-and-fade in `reaction-stream.tsx`. */
+const REACTION_LIFETIME_MS = 1_500;
 import type { PlayerView } from '@/game/view';
 import type { PlayerSlot } from '@/game/types';
 
@@ -43,6 +54,11 @@ export interface LiveMatch {
    * ends. Re-sent on every connect, so a reload gets it back.
    */
   readonly rating: RatingOutcome | null;
+  /**
+   * Reactions currently on screen (spec §7.1). Transient by design: they are never
+   * stored, so a reload simply starts with none.
+   */
+  readonly reactions: readonly LiveReaction[];
   send(intent: ClientIntent): void;
   clearError(): void;
 }
@@ -67,6 +83,8 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
   const [lastShot, setLastShot] = useState<LiveMatch['lastShot']>(null);
   const [timers, setTimers] = useState<SnapshotTimers | null>(null);
   const [rating, setRating] = useState<RatingOutcome | null>(null);
+  const [reactions, setReactions] = useState<readonly LiveReaction[]>([]);
+  const reactionId = useRef(0);
 
   const socketRef = useRef<WebSocket | null>(null);
   const seqRef = useRef(0);
@@ -164,6 +182,21 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
             case 'rating_applied':
               setRating(message);
               break;
+            case 'reaction': {
+              reactionId.current += 1;
+              const entry: LiveReaction = {
+                id: reactionId.current,
+                emoji: message.emoji,
+                from: message.from,
+              };
+              setReactions((current) => [...current, entry]);
+              // Dropped once it has finished fading; nothing accumulates.
+              setTimeout(
+                () => setReactions((current) => current.filter((item) => item.id !== entry.id)),
+                REACTION_LIFETIME_MS,
+              );
+              break;
+            }
             case 'fire_result': {
               const cell = message.cells[0];
               if (cell) {
@@ -175,6 +208,11 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
               setLastError(message.reason);
               break;
             case 'error':
+              // A refused reaction is the server's spam limit doing its job, not
+              // something to put in front of the player (spec §10).
+              if (message.code === 'rate_limited') {
+                break;
+              }
               // "Waiting for the other player" arrives as an error before the game
               // exists; it is a lobby state, not something to show as a failure.
               if (message.code === 'unsupported_intent') {
@@ -233,5 +271,5 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
     };
   }, [gameId, wsUrl]);
 
-  return { status, view, seat, lastError, lastShot, timers, rating, send, clearError };
+  return { status, view, seat, lastError, lastShot, timers, rating, reactions, send, clearError };
 }

@@ -25,6 +25,8 @@ import type { PlaceFleetError } from '@/game/state';
 import type { Coord, PlayerSlot, ResultReason, ShipClass, ShotOutcome } from '@/game/types';
 import type { PlayerView } from '@/game/view';
 
+import { REACTIONS, type Reaction } from './reactions';
+
 // ---------------------------------------------------------------------------
 // Payload sanity bounds
 // ---------------------------------------------------------------------------
@@ -92,13 +94,14 @@ export const fireIntentSchema = z.strictObject({
 });
 
 /**
- * Spec §7.4 calls for "a fixed set of quick emoji reactions" but never enumerates it.
- * Choosing that set is product content, not an implementation detail, so this stays a
- * bounded opaque token; Block 11 must narrow it to `z.enum([...])` once the set exists.
+ * Spec §7.4's fixed reaction set, now chosen — see `reactions.ts`.
+ *
+ * An enum, not a string: the vocabulary is the entire moderation strategy, so
+ * anything outside it is rejected at the boundary rather than relayed.
  */
 export const reactIntentSchema = z.strictObject({
   type: z.literal('react'),
-  emoji: z.string().min(1).max(16),
+  emoji: z.enum(REACTIONS),
 });
 
 export const resignIntentSchema = z.strictObject({ type: z.literal('resign') });
@@ -170,7 +173,9 @@ export type SessionOwnErrorCode =
   /** Wrong number of cells for the mode (spec §9: "wrong salvo size"). */
   | 'wrong_salvo_size'
   /** `ready` before a fleet has been accepted. */
-  | 'fleet_not_placed';
+  | 'fleet_not_placed'
+  /** Reactions arrived faster than spec §10's server-side limit allows. */
+  | 'rate_limited';
 
 /**
  * Every code a session rejection can carry.
@@ -257,6 +262,17 @@ export type ServerEvent =
       readonly graceDeadlineTs: number;
     }
   | { readonly type: 'opponent_reconnected'; readonly seat: PlayerSlot }
+  | {
+      /**
+       * Spec §9's `opponent_reacted`, with two deliberate differences: it carries
+       * the sender, and it goes to *both* players. A sender who could not see their
+       * own reaction would have no way to tell whether it was sent — and the server
+       * is the only thing that knows, because it may have been rate-limited.
+       */
+      readonly type: 'reaction';
+      readonly from: PlayerSlot;
+      readonly emoji: Reaction;
+    }
   | {
       /** A turn passed without a shot (spec §4's auto-skip). */
       readonly type: 'turn_skipped';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { autoPlaceFleet } from '@/game/autoplace';
 import { cellsOfPlacement } from '@/game/placement';
@@ -11,6 +11,9 @@ import type { Coord } from '@/game/types';
 import { GuestUpsell } from '@/components/account/guest-upsell';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
+
+import { useSound } from '@/lib/audio/use-audio';
+import type { Reaction } from '@/server/session/reactions';
 
 import { Board } from './board';
 import {
@@ -26,6 +29,8 @@ import { FleetTray } from './fleet-tray';
 import { GameOverOverlay } from './game-over-overlay';
 import { GraceCountdown, MatchClock } from './match-clock';
 import { RatingChange } from './rating-change';
+import { ReactionBar } from './reaction-bar';
+import { ReactionStream } from './reaction-stream';
 import { ResignButton } from './resign-button';
 import { WaitingPanel } from './waiting-panel';
 import { TurnBanner, type BannerState } from './status-panel';
@@ -66,6 +71,7 @@ export function LiveMatchScreen({
   const [autoPlaceCount, setAutoPlaceCount] = useState(0);
   const [targetCursor, setTargetCursor] = useState<Coord>({ x: 0, y: 0 });
 
+  const audio = useSound();
   const view = match.view;
   const timers = match.timers;
   const phase = view?.phase ?? 'placement';
@@ -153,6 +159,10 @@ export function LiveMatchScreen({
     match.send({ type: 'resign' });
   }
 
+  function react(emoji: Reaction): void {
+    match.send({ type: 'react', emoji });
+  }
+
   function fireAt(coord: Coord): void {
     if (!canFire) {
       return;
@@ -161,6 +171,29 @@ export function LiveMatchScreen({
   }
 
   const seatOfViewer = view?.viewer ?? null;
+
+  // Yours rise on your side of the board, theirs on the other.
+  const floating = match.reactions.map((reaction) => ({
+    id: reaction.id,
+    emoji: reaction.emoji,
+    mine: reaction.from === seatOfViewer,
+  }));
+
+  /**
+   * A soft blip for each arriving reaction (spec §7.2).
+   *
+   * Keyed on the newest id so it fires once per reaction, and routed through the
+   * shared audio engine, which already honours the mute setting.
+   */
+  const newest = match.reactions[match.reactions.length - 1]?.id ?? 0;
+  const heard = useRef(0);
+
+  useEffect(() => {
+    if (newest > heard.current) {
+      heard.current = newest;
+      audio.play('reaction');
+    }
+  }, [newest, audio]);
 
   function renderStrikeWarning(missed: number, max: number) {
     if (missed === 0) {
@@ -188,10 +221,30 @@ export function LiveMatchScreen({
             : tm('live.connecting');
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-5">
+    <main className="relative mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-5">
+      {/* Spec §7.1: reactions float over the board. The layer ignores pointer
+          events, so nothing it draws can intercept a shot. */}
+      <ReactionStream reactions={floating} />
+
       <header className="mb-4 flex flex-wrap items-center justify-between gap-3 lg:mb-3">
         <h1 className="text-xl font-semibold tracking-tight">{tm('live.title')}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {/*
+            Reactions live in the top bar rather than under the boards.
+            Below them they fell past the fold — on a phone behind a whole second
+            board — so reacting meant scrolling away from the game. Up here they are
+            always in reach at any height, and nowhere near the grid.
+
+            KNOWN LIMITATION, deferred to Phase 2. This is better than it was, but
+            it is not where these belong: spec §7.11 wants a desktop side panel
+            holding status, timer and reactions together, and this screen has no
+            side panel to put them in. Building one is a redesign of the match
+            layout, which Phase 2 covers ("interactive tutorial + video", board and
+            UI polish) — so the placement stays provisional until then rather than
+            growing a one-off panel here.
+          */}
+          {view && phase !== 'finished' ? <ReactionBar onReact={react} /> : null}
+
           {/* The clock sits beside the connection state: both answer "is this game
               still moving?", and a player glances at them together. */}
           {timers && phase !== 'finished' ? (
@@ -441,7 +494,7 @@ export function LiveMatchScreen({
         </section>
       ) : null}
 
-      {/* Leaving is always available while a game is live, and always confirmed. */}
+      {/* Leaving stays at the bottom: it is deliberately not within easy reach. */}
       {view && phase !== 'finished' ? (
         <div className="mt-5 flex justify-center border-t border-border pt-4">
           <ResignButton onResign={resign} />

@@ -351,6 +351,19 @@
     "rating": {
       "unrated": "Diese Partie wurde nicht gewertet.",
       "provisional": "{played} von {total} gewerteten Partien — {remaining, plural, =1 {noch # bis zur Platzierung} other {noch # bis zur Platzierung}}."
+    },
+    "reactions": {
+      "label": "Reaktion senden",
+      "sentAnnounce": "Deine Reaktion: {emoji}",
+      "receivedAnnounce": "Reaktion der Gegenseite: {emoji}",
+      "emoji": {
+        "applause": "Applaus",
+        "surprise": "Überraschung",
+        "laugh": "Lachen",
+        "fire": "In Flammen",
+        "sob": "Weinen",
+        "salute": "Salut"
+      }
     }
   },
   "leaderboard": {

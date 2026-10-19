@@ -369,11 +369,10 @@ describe('illegal intents are safe (spec §9, §10)', () => {
       code: 'not_a_participant',
     },
     {
-      label: 'an intent the session does not implement yet',
+      label: 'a heartbeat, which belongs to the transport adapter',
       build: () => startedSession(),
       player: PLAYER_A,
-      // Reactions are Block 11; resign is handled as of Block 9.
-      message: { seq: 1, intent: { type: 'react', emoji: 'gg' } },
+      message: { seq: 1, intent: { type: 'heartbeat' } },
       code: 'unsupported_intent',
     },
     {

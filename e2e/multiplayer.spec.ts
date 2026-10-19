@@ -321,6 +321,102 @@ test.describe('the rating line after a room match @core', () => {
   });
 });
 
+test.describe('emoji reactions @core', () => {
+  test('reach both players and never block the board', async ({ browser }) => {
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+    const host = await newPlayer(hostContext);
+    const guest = await newPlayer(guestContext);
+
+    await host.page.goto('/en/play/room');
+    await host.page.getByRole('button', { name: /create a room/i }).click();
+    await expect(host.page).toHaveURL(/\/room\/[A-Z0-9]{6}$/, { timeout: 20_000 });
+
+    await guest.page.goto(host.page.url());
+    await reachPlacement(guest.page);
+    await reachPlacement(host.page);
+
+    // Available during fleet placement, not only once the shooting starts. On a
+    // phone the six sit behind one button, so that it never competes with the
+    // firing area for thumb space.
+    const toggle = host.page.getByRole('button', { name: /send a reaction/i });
+
+    /**
+     * Reachable without scrolling.
+     *
+     * The controls used to sit under the boards, which on a phone meant scrolling
+     * past a whole second board to react — so they moved into the top bar.
+     */
+    const control = (await toggle.isVisible())
+      ? toggle
+      : host.page.getByRole('button', { name: /applause/i });
+    const box = await control.boundingBox();
+    const viewport = host.page.viewportSize();
+    expect(box, 'the reaction control is laid out').not.toBeNull();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(viewport?.height ?? 0);
+
+    if (await toggle.isVisible()) {
+      await toggle.click();
+    }
+
+    const applause = host.page.getByRole('button', { name: /applause/i });
+    await expect(applause).toBeVisible();
+    await applause.click();
+
+    // Both sides see it float over the board — the sender too, so they know it was
+    // sent. Scoped to the floating layer, since the button shows the emoji as well.
+    for (const player of [host, guest]) {
+      await expect(player.page.locator('[data-reaction-stream]').getByText('👏')).toBeVisible({
+        timeout: 20_000,
+      });
+    }
+
+    // It floats over the board without swallowing clicks: placement still works.
+    await host.page.locator('[data-cell="0,0"]').first().click();
+    await expect(host.page.locator('[data-hull="ship"]')).toHaveCount(1);
+
+    // Reactions are transient and never stored, so a reload starts clean.
+    await host.page.reload();
+    await reachPlacement(host.page);
+    await expect(host.page.locator('[data-reaction-stream]').getByText('👏')).toHaveCount(0);
+
+    for (const [label, player] of [
+      ['host', host],
+      ['guest', guest],
+    ] as const) {
+      expect(player.problems, `${label} console`).toEqual([]);
+    }
+
+    await hostContext.close();
+    await guestContext.close();
+  });
+
+  test('are gone once the match is over', async ({ browser }) => {
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+    const host = await newPlayer(hostContext);
+    const guest = await newPlayer(guestContext);
+
+    await host.page.goto('/en/play/room');
+    await host.page.getByRole('button', { name: /create a room/i }).click();
+    await expect(host.page).toHaveURL(/\/room\/[A-Z0-9]{6}$/, { timeout: 20_000 });
+
+    await guest.page.goto(host.page.url());
+    await reachPlacement(guest.page);
+    await reachPlacement(host.page);
+
+    await host.page.getByRole('button', { name: /^resign$/i }).click();
+    await host.page.getByRole('button', { name: /yes, resign/i }).click();
+    await expect(host.page.getByText(/you resigned/i)).toBeVisible({ timeout: 20_000 });
+
+    await expect(host.page.getByRole('button', { name: /applause/i })).toHaveCount(0);
+    await expect(host.page.getByRole('button', { name: /send a reaction/i })).toHaveCount(0);
+
+    await hostContext.close();
+    await guestContext.close();
+  });
+});
+
 test.describe('German renders the live flow correctly', () => {
   test('no missing keys in the room and placement screens', async ({ browser }) => {
     const a = await browser.newContext({ locale: 'de-DE' });
