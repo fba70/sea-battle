@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { boolean, check, pgTable, text, timestamp, unique } from 'drizzle-orm/pg-core';
+import { boolean, check, pgTable, text, timestamp, unique, uniqueIndex } from 'drizzle-orm/pg-core';
 
 /**
  * better-auth core tables, plus the single column the anonymous plugin needs.
@@ -59,6 +59,21 @@ export const user = pgTable(
      * a rating" is enforced in the database rather than in application code.
      */
     unique('user_id_is_anonymous_key').on(table.id, table.isAnonymous),
+
+    /**
+     * Spec §7.5's display name, unique case-insensitively (agreed product rule).
+     *
+     * Scoped to registered accounts on purpose. Every guest better-auth creates is
+     * called "Anonymous", so a unique index over the whole table would make the
+     * second guest impossible — and guests are how the game is played without an
+     * account at all. `lower(name)` is what makes the uniqueness case-insensitive,
+     * and the index is the only thing that can actually arbitrate two people
+     * registering the same name at the same moment.
+     */
+    uniqueIndex('user_display_name_key')
+      .on(sql`lower(${table.name})`)
+      .where(sql`"is_anonymous" = false`),
+
     check('user_locale_valid', sql`"locale" is null or "locale" in ('en', 'de', 'es', 'it', 'fr')`),
   ],
 );

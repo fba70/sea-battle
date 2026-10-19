@@ -23,3 +23,5 @@
  */
 export * from './claim';
 export * from './claim-store';
+export * from './display-name';
+export * from './name-registry';

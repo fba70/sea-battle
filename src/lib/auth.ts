@@ -1,11 +1,14 @@
-import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { APIError, betterAuth, type BetterAuthOptions } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
 import { anonymous } from 'better-auth/plugins';
 
 import { runGuestClaim, type GuestClaimStore } from './account/claim';
 import { createGuestClaimStore } from './account/claim-store';
+import { checkDisplayName, displayNameKey } from './account/display-name';
+import { createDisplayNameRegistry, type DisplayNameRegistry } from './account/name-registry';
 import { db, schema } from './db';
+import { MIN_PASSWORD_LENGTH } from './auth-rules';
 import { serverEnv } from './env';
 
 /**
@@ -19,6 +22,7 @@ export function buildAuthOptions(
   database: BetterAuthOptions['database'],
   baseURL: string = serverEnv.BETTER_AUTH_URL,
   claimStore: GuestClaimStore = createGuestClaimStore(),
+  nameRegistry: DisplayNameRegistry = createDisplayNameRegistry(),
 ) {
   // No explicit return type: inference has to survive so that `betterAuth()`
   // can derive the plugin API (e.g. `api.signInAnonymous`) from these options.
@@ -30,7 +34,50 @@ export function buildAuthOptions(
     // Spec §7.5: email + password is the registration path. The UI for it is
     // Phase 1; the endpoint existing now costs nothing and keeps the guest ->
     // account claim a single migration away.
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      // Agreed: length only. Composition rules push people towards worse passwords
+      // they have to write down, and better-auth hashes with scrypt either way.
+      minPasswordLength: MIN_PASSWORD_LENGTH,
+    },
+
+    /**
+     * Display names are checked here, at the one place every account creation
+     * passes through — rather than in a route handler, which the anonymous plugin
+     * and any future sign-up path would bypass.
+     *
+     * Guests are exempt: better-auth names every one of them "Anonymous", which is
+     * both reserved and duplicated, and they hold no place in the namespace.
+     */
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (candidate: { name?: string; isAnonymous?: boolean | null }) => {
+            if (candidate.isAnonymous === true) {
+              return;
+            }
+
+            const checked = checkDisplayName(candidate.name ?? '');
+            if (!checked.ok) {
+              throw new APIError('UNPROCESSABLE_ENTITY', {
+                code: 'INVALID_DISPLAY_NAME',
+                message: checked.problem,
+              });
+            }
+
+            if (await nameRegistry.isTaken(displayNameKey(checked.name))) {
+              throw new APIError('UNPROCESSABLE_ENTITY', {
+                code: 'DISPLAY_NAME_TAKEN',
+                message: 'taken',
+              });
+            }
+
+            // Stored trimmed, so what is shown is what uniqueness was judged on.
+            return { data: { ...candidate, name: checked.name } };
+          },
+        },
+      },
+    },
 
     plugins: [
       /**

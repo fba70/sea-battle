@@ -40,8 +40,17 @@ function recordingClaimStore(counts: ClaimCounts = { games: 2, guestExisted: tru
 
 function freshAuth(claimStore: GuestClaimStore = recordingClaimStore().store) {
   const store: Store = { user: [], session: [], account: [], verification: [] };
+
+  /** The same uniqueness rule as the Postgres index, over the in-memory rows. */
+  const nameRegistry = {
+    isTaken: async (key: string) =>
+      (store.user as { name?: string; isAnonymous?: boolean }[]).some(
+        (row) => row.isAnonymous !== true && (row.name ?? '').toLowerCase() === key,
+      ),
+  };
+
   const auth = betterAuth(
-    buildAuthOptions(memoryAdapter(store), 'http://localhost:3000', claimStore),
+    buildAuthOptions(memoryAdapter(store), 'http://localhost:3000', claimStore, nameRegistry),
   );
   return { auth, store };
 }
@@ -125,7 +134,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     const { response } = await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
       returnHeaders: true,
     });
@@ -143,7 +152,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     const { response } = await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
       returnHeaders: true,
     });
@@ -160,7 +169,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     const { response } = await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
       returnHeaders: true,
     });
@@ -177,7 +186,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     const { headers } = await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
       returnHeaders: true,
     });
@@ -269,7 +278,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
     });
     expect(recorder.calls).toHaveLength(1);
@@ -290,7 +299,7 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     const { response } = await auth.api.signUpEmail({
-      body: { email: 'new@example.com', password: PASSWORD, name: 'New Player' },
+      body: { email: 'new@example.com', password: PASSWORD, name: 'New_Player' },
       headers: guest.headers,
       returnHeaders: true,
     });
@@ -307,5 +316,67 @@ describe('guest → account claim (spec §7.5)', () => {
     const guest = await asGuest(auth);
 
     await expect(auth.api.signInAnonymous({ headers: guest.headers })).rejects.toBeTruthy();
+  });
+});
+
+describe('display names (spec §7.5)', () => {
+  const PASSWORD_8 = 'eightchr';
+
+  async function register(
+    auth: ReturnType<typeof freshAuth>['auth'],
+    name: string,
+    email = `${name.toLowerCase()}@example.com`,
+    password = PASSWORD_8,
+  ) {
+    return auth.api.signUpEmail({ body: { email, password, name } });
+  }
+
+  it('refuses a name that breaks the agreed rules', async () => {
+    const { auth } = freshAuth();
+
+    await expect(register(auth, 'ab')).rejects.toThrow();
+    await expect(register(auth, 'has space', 'spaced@example.com')).rejects.toThrow();
+    await expect(register(auth, 'Anonymous', 'imposter@example.com')).rejects.toThrow();
+  });
+
+  it('refuses a name already taken, whatever the casing', async () => {
+    const { auth } = freshAuth();
+    await register(auth, 'Mariner');
+
+    // Case-insensitive uniqueness: the second registration must not succeed.
+    await expect(register(auth, 'MARINER', 'other@example.com')).rejects.toThrow();
+  });
+
+  it('stores the name trimmed, so it matches what uniqueness was judged on', async () => {
+    const { auth, store } = freshAuth();
+    await register(auth, '  Harbour  ', 'harbour@example.com');
+
+    const rows = store.user as { name?: string; isAnonymous?: boolean }[];
+    expect(rows.find((row) => row.isAnonymous !== true)?.name).toBe('Harbour');
+  });
+
+  it('leaves guests alone, because every one of them is called Anonymous', async () => {
+    // A global rule would make the second guest impossible, and guests are how the
+    // game is played without an account at all.
+    const { auth, store } = freshAuth();
+    await signInAnonymously(auth);
+    await signInAnonymously(auth);
+
+    const guests = (store.user as { isAnonymous?: boolean }[]).filter(
+      (row) => row.isAnonymous === true,
+    );
+    expect(guests).toHaveLength(2);
+  });
+
+  it('accepts a password of exactly the agreed minimum', async () => {
+    const { auth } = freshAuth();
+    await expect(
+      register(auth, 'Keelson', 'keelson@example.com', PASSWORD_8),
+    ).resolves.toBeTruthy();
+  });
+
+  it('refuses a password one character short', async () => {
+    const { auth } = freshAuth();
+    await expect(register(auth, 'Rudder', 'rudder@example.com', 'sevench')).rejects.toThrow();
   });
 });

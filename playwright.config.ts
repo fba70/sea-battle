@@ -25,9 +25,29 @@ const skipWebkit = process.env.PLAYWRIGHT_SKIP_WEBKIT === '1';
 
 const CORE_ONLY = /@core/;
 
+/**
+ * Tests that compete for the one global matchmaking queue.
+ *
+ * Quick match pairs whoever is waiting, which is the product working correctly and
+ * a disaster for test isolation: two projects running the same spec put four guests
+ * in one pool, and they pair across tests. These run in a single project, so the
+ * only players searching at any moment are the ones a test put there.
+ */
+const QUEUE_BOUND = /@queue/;
+
 const webkitProjects = [
-  { name: 'desktop-webkit', use: { ...devices['Desktop Safari'] }, grep: CORE_ONLY },
-  { name: 'mobile-safari', use: { ...devices['iPhone 14'] }, grep: CORE_ONLY },
+  {
+    name: 'desktop-webkit',
+    use: { ...devices['Desktop Safari'] },
+    grep: CORE_ONLY,
+    grepInvert: QUEUE_BOUND,
+  },
+  {
+    name: 'mobile-safari',
+    use: { ...devices['iPhone 14'] },
+    grep: CORE_ONLY,
+    grepInvert: QUEUE_BOUND,
+  },
 ];
 
 export default defineConfig({
@@ -52,9 +72,15 @@ export default defineConfig({
    * would add runtime without adding signal.
    */
   projects: [
+    // The only project that runs the queue-bound specs.
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
-    { name: 'desktop-firefox', use: { ...devices['Desktop Firefox'] }, grep: CORE_ONLY },
+    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] }, grepInvert: QUEUE_BOUND },
+    {
+      name: 'desktop-firefox',
+      use: { ...devices['Desktop Firefox'] },
+      grep: CORE_ONLY,
+      grepInvert: QUEUE_BOUND,
+    },
     ...(skipWebkit ? [] : webkitProjects),
   ],
   webServer: {

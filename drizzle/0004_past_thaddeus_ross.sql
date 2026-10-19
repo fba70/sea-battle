@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "user_display_name_key" ON "user" USING btree (lower("name")) WHERE "is_anonymous" = false;

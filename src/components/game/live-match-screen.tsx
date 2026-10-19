@@ -8,6 +8,7 @@ import { cellsOfPlacement } from '@/game/placement';
 import { createRng } from '@/game/rng';
 import type { Coord } from '@/game/types';
 
+import { GuestUpsell } from '@/components/account/guest-upsell';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 
@@ -415,6 +416,9 @@ export function LiveMatchScreen({
                     : view.opponent.hits / view.opponent.shotsFired,
                 shipsLeft: view.own.shipsRemaining,
               }}
+              // Spec §7.5's "prompt to save my progress after a good game". Renders
+              // nothing for anyone who already has an account.
+              footer={<GuestUpsell />}
               actions={[
                 onNewMatch
                   ? { label: tm('live.result.again'), onClick: onNewMatch }

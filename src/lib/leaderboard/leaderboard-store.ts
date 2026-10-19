@@ -3,6 +3,8 @@ import { sql, type SQLWrapper } from 'drizzle-orm';
 import { db as defaultDb } from '../db';
 import { games, ratings, type GameMode, type GameType } from '../db/schema/game';
 import { user } from '../db/schema/auth';
+import { DEFAULT_RATING, DEFAULT_RD } from '@/rating/glicko';
+
 import { inflatedRdSql, leaderboardEligibleSql } from '../rating/leaderboard';
 import { currentRd, leaderboardEligibility } from '../rating/policy';
 
@@ -139,19 +141,32 @@ export function createLeaderboardStore(database: Database = defaultDb): Leaderbo
     },
 
     async standing({ userId, mode, now }) {
+      /**
+       * Driven from `user`, not from `ratings`.
+       *
+       * A rating row only appears when a player's first rated game is scored, so
+       * starting from `ratings` meant a newly registered player had no profile at
+       * all — the page 404'd on the link in our own header. A registered account
+       * always has a profile; the rating is simply the spec §7.6 starting values
+       * until they play.
+       *
+       * Guests still get nothing: they cannot hold a rating, and their identity is
+       * a throwaway.
+       */
       const result = await database.execute(sql`
         select
-          ${ratings.userId} as user_id,
-          ${ratings.rating} as rating,
-          ${ratings.rd} as stored_rd,
-          ${ratings.gamesRated} as games_rated,
+          ${user.id} as user_id,
+          coalesce(${ratings.rating}, ${DEFAULT_RATING}) as rating,
+          coalesce(${ratings.rd}, ${DEFAULT_RD}) as stored_rd,
+          coalesce(${ratings.gamesRated}, 0) as games_rated,
           ${ratings.lastRatingPeriodAt} as last_rating_period_at,
           ${user.name} as name, ${user.country} as country, ${user.avatarSeed} as avatar_seed,
           record.wins, record.losses
-        from ${ratings}
-        join ${user} on ${user.id} = ${ratings.userId}
-        cross join lateral (${ratedRecord(ratings.userId, mode)}) as record
-        where ${ratings.userId} = ${userId} and ${ratings.mode} = ${mode}
+        from ${user}
+        left join ${ratings}
+          on ${ratings.userId} = ${user.id} and ${ratings.mode} = ${mode}
+        cross join lateral (${ratedRecord(user.id, mode)}) as record
+        where ${user.id} = ${userId} and ${user.isAnonymous} = false
         limit 1
       `);
 

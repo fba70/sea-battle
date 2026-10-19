@@ -1,3 +1,4 @@
+import { SessionControl } from '@/components/account/session-control';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { Link } from '@/i18n/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -59,7 +60,8 @@ export async function SiteHeader() {
           </Link>
         </nav>
 
-        <div className="col-start-2 row-start-1 justify-self-end sm:ms-auto">
+        <div className="col-start-2 row-start-1 flex items-center gap-4 justify-self-end sm:ms-auto">
+          <SessionControl />
           <LocaleSwitcher />
         </div>
       </div>

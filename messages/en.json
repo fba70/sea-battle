@@ -447,5 +447,37 @@
         "disconnect": "Disconnected"
       }
     }
+  },
+  "account": {
+    "title": "Your account",
+    "lead": "Keep your rating, your match history and your place on the leaderboard. Email and password — nothing else, and no email from us.",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "createAccount": "Create account",
+    "displayName": "Display name",
+    "displayNameHint": "{min}–{max} characters: letters, numbers and underscores. This is the name other players see.",
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least {min} characters.",
+    "working": "Just a moment…",
+    "signInNote": "Signing in replaces the guest you are playing as right now.",
+    "signUpNote": "Anything you have played as a guest comes with you.",
+    "errors": {
+      "emailTaken": "There is already an account with that email. Try signing in instead.",
+      "badCredentials": "That email and password do not match an account.",
+      "passwordTooShort": "That password is too short.",
+      "unknown": "Something went wrong. Try again.",
+      "name": {
+        "too_short": "That name is too short.",
+        "too_long": "That name is too long.",
+        "invalid_characters": "Letters, numbers and underscores only.",
+        "reserved": "That name is reserved. Pick another.",
+        "taken": "That name is taken. Pick another."
+      }
+    },
+    "upsell": {
+      "body": "You are playing as a guest, so this game was not rated and will not be kept.",
+      "cta": "Create an account to keep it"
+    }
   }
 }

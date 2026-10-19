@@ -130,9 +130,51 @@ describe('standing', () => {
     ...overrides,
   });
 
-  it('returns null for a player with no rating row', async () => {
+  it('returns null for an account that does not exist', async () => {
     const { store } = fakeDb([[]]);
     expect(await store.standing({ userId: 'nobody', mode: 'classic', now: NOW })).toBeNull();
+  });
+
+  it('is driven from the account, not from the rating', async () => {
+    /**
+     * The regression: a rating row only appears once a player's first rated game is
+     * scored, so starting the query from `ratings` left a newly registered player
+     * with no profile at all — and the link in our own header 404'd.
+     */
+    const { store, statements } = fakeDb([[]]);
+    await store.standing({ userId: 'user-a', mode: 'classic', now: NOW });
+
+    const sql = statements[0]?.sql ?? '';
+    expect(sql).toMatch(/from "user"\s+left join "ratings"/);
+    // Guests cannot hold a rating and their identity is a throwaway.
+    expect(sql).toContain('"user"."is_anonymous" = false');
+  });
+
+  it('gives a player who has never been rated the starting values', async () => {
+    const { store, statements } = fakeDb([
+      [
+        row({
+          rating: '1500',
+          stored_rd: '350',
+          games_rated: '0',
+          last_rating_period_at: null,
+          wins: '0',
+          losses: '0',
+        }),
+      ],
+    ]);
+
+    const standing = await store.standing({ userId: 'user-a', mode: 'classic', now: NOW });
+
+    expect(standing).toMatchObject({
+      rating: 1500,
+      rd: 350,
+      gamesRated: 0,
+      rank: null,
+      eligibility: { eligible: false, reason: 'never_rated' },
+    });
+    // No rank lookup for someone who cannot be ranked.
+    expect(statements).toHaveLength(1);
   });
 
   it('ranks an eligible player with the same ordering the board uses', async () => {

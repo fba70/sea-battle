@@ -28,6 +28,7 @@ export function GameOverOverlay({
   onRestart,
   title,
   body,
+  footer,
   actions,
 }: {
   won: boolean;
@@ -36,6 +37,8 @@ export function GameOverOverlay({
   onRestart?: () => void;
   title?: string;
   body?: string;
+  /** Rendered under the buttons — the guest sign-up nudge in a live match. */
+  footer?: React.ReactNode;
   actions?: readonly GameOverAction[];
 }) {
   const t = useTranslations('game');
@@ -168,6 +171,8 @@ export function GameOverOverlay({
             ),
           )}
         </div>
+
+        {footer ? <div className="border-t border-border pt-3">{footer}</div> : null}
       </motion.div>
     </motion.div>
   );

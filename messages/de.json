@@ -447,5 +447,37 @@
         "disconnect": "Verbindung verloren"
       }
     }
+  },
+  "account": {
+    "title": "Dein Konto",
+    "lead": "Behalte deine Wertung, deinen Partienverlauf und deinen Ranglistenplatz. Nur E-Mail und Passwort — und keine Post von uns.",
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "createAccount": "Konto erstellen",
+    "displayName": "Anzeigename",
+    "displayNameHint": "{min}–{max} Zeichen: Buchstaben, Ziffern und Unterstriche. Diesen Namen sehen andere.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "passwordHint": "Mindestens {min} Zeichen.",
+    "working": "Einen Moment…",
+    "signInNote": "Beim Anmelden wird der Gast ersetzt, als der du gerade spielst.",
+    "signUpNote": "Was du als Gast gespielt hast, kommt mit.",
+    "errors": {
+      "emailTaken": "Mit dieser E-Mail gibt es bereits ein Konto. Melde dich stattdessen an.",
+      "badCredentials": "E-Mail und Passwort passen zu keinem Konto.",
+      "passwordTooShort": "Dieses Passwort ist zu kurz.",
+      "unknown": "Etwas ist schiefgelaufen. Versuche es erneut.",
+      "name": {
+        "too_short": "Dieser Name ist zu kurz.",
+        "too_long": "Dieser Name ist zu lang.",
+        "invalid_characters": "Nur Buchstaben, Ziffern und Unterstriche.",
+        "reserved": "Dieser Name ist reserviert. Wähle einen anderen.",
+        "taken": "Dieser Name ist vergeben. Wähle einen anderen."
+      }
+    },
+    "upsell": {
+      "body": "Du spielst als Gast — diese Partie wurde nicht gewertet und wird nicht gespeichert.",
+      "cta": "Konto erstellen und behalten"
+    }
   }
 }

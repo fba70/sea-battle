@@ -1,12 +1,14 @@
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 
 /**
- * A quick match carried to a real finish and then restarted — the sequence a person
- * actually goes through, which the shorter specs skip by resigning immediately.
+ * Everything that competes for the one global matchmaking queue (spec §7.4).
  *
- * How it ends is left to the game: trading shots until a fleet goes down, or the
- * move clock running out three times along the way. Either is a genuine result, and
- * what this spec is really about is everything that happens *after* one.
+ * Together, and **serial**, on purpose. Quick match pairs whoever is waiting, so two
+ * of these running at once put four guests in one pool and pair them across tests —
+ * the product behaving correctly, and a test suite that cannot tell. Keeping them in
+ * a single file in serial mode means the only players searching at any moment are
+ * the ones the running test put there. `playwright.config.ts` also restricts the
+ * `@queue` tag to one browser project, for the same reason.
  *
  * Needs the realtime Worker as well as the app, so it skips when the Worker is not
  * reachable rather than failing the normal suite.
@@ -14,6 +16,8 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 const WORKER_URL = process.env.PLAYWRIGHT_GAME_WS_HTTP ?? 'http://127.0.0.1:8787';
 
 let workerUp = false;
+
+test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(async ({ request }) => {
   try {
@@ -28,8 +32,20 @@ test.beforeEach(() => {
   test.skip(!workerUp, `realtime Worker not reachable at ${WORKER_URL} — run npm run worker:dev`);
 });
 
-// Sinking twenty cells one click at a time, across two browsers.
+// Two browser sessions, a socket each, and a match played out between them.
 test.setTimeout(300_000);
+
+/** Placed hulls only — the drag preview is a rect too, tagged `ghost`. */
+async function hullCount(page: Page): Promise<number> {
+  return page.locator('[data-hull="ship"]').count();
+}
+
+async function reachPlacement(page: Page): Promise<void> {
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('list', { name: /ships to place|schiffe/i })).toBeVisible({
+    timeout: 30_000,
+  });
+}
 
 function watchConsole(page: Page): string[] {
   const problems: string[] = [];
@@ -115,7 +131,102 @@ async function playToTheEnd(one: Page, two: Page): Promise<void> {
   throw new Error('the match did not finish in time');
 }
 
-test.describe('a quick match carried to a finish @core', () => {
+test.describe('quick match, two independent guests @core @queue', () => {
+  test('two waiting players are paired and both reach placement', async ({ browser }) => {
+    const first = await browser.newContext();
+    const second = await browser.newContext();
+    const one = await newPlayer(first);
+    const two = await newPlayer(second);
+
+    for (const player of [one, two]) {
+      await player.page.goto('/en/play/quick');
+      await player.page.getByRole('button', { name: /find an opponent/i }).click();
+    }
+
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    await one.page.getByRole('button', { name: /auto-place/i }).click();
+    expect(await hullCount(one.page)).toBe(10);
+
+    for (const player of [one, two]) {
+      expect(player.problems).toEqual([]);
+    }
+
+    /*
+     * Leave the queue explicitly.
+     *
+     * A player who simply closes the tab stays matchable until the row goes stale
+     * (15s), so back-to-back runs of this spec could otherwise pair with the previous
+     * run's ghost and wait forever. That is real product behaviour, not a test bug —
+     * but a test should not leave it behind for the next one.
+     */
+    for (const player of [one, two]) {
+      await player.page.request.delete('/api/match/quick').catch(() => undefined);
+    }
+
+    await first.close();
+    await second.close();
+  });
+});
+
+test.describe('starting another match afterwards @core @queue', () => {
+  test('“New match” starts a fresh search for both players', async ({ browser }) => {
+    /**
+     * The reported bug: the button did nothing. Quick match renders the live game in
+     * place at /play/quick, so a link to /play/quick navigated nowhere and the
+     * finished game simply stayed on screen.
+     */
+    const firstContext = await browser.newContext();
+    const secondContext = await browser.newContext();
+    const one = await newPlayer(firstContext);
+    const two = await newPlayer(secondContext);
+
+    for (const player of [one, two]) {
+      await player.page.goto('/en/play/quick');
+      await player.page.getByRole('button', { name: /find an opponent/i }).click();
+    }
+
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    // Resigning is the quickest honest way to finish a match.
+    await one.page.getByRole('button', { name: /^resign$/i }).click();
+    await one.page.getByRole('button', { name: /yes, resign/i }).click();
+    await expect(one.page.getByText(/you resigned/i)).toBeVisible({ timeout: 20_000 });
+    await expect(two.page.getByText(/your opponent resigned/i)).toBeVisible({ timeout: 20_000 });
+
+    // Each player asks for another match on their own, and both leave the finished
+    // game behind rather than sitting on the result.
+    for (const player of [one, two]) {
+      await player.page.getByRole('button', { name: /new match/i }).click();
+      await expect(player.page.getByRole('heading', { name: /live match/i })).toHaveCount(0, {
+        timeout: 20_000,
+      });
+    }
+
+    // Two searchers in the same pool pair up again, which is the proof that neither
+    // was left holding the old game.
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    for (const [label, player] of [
+      ['one', one],
+      ['two', two],
+    ] as const) {
+      expect(player.problems, `${label} console`).toEqual([]);
+    }
+
+    for (const player of [one, two]) {
+      await player.page.request.delete('/api/match/quick').catch(() => undefined);
+    }
+
+    await firstContext.close();
+    await secondContext.close();
+  });
+});
+
+test.describe('a quick match carried to a finish @core @queue', () => {
   test('ends, and neither a reload nor “New match” brings it back', async ({ browser }) => {
     const firstContext = await browser.newContext();
     const secondContext = await browser.newContext();
@@ -128,6 +239,11 @@ test.describe('a quick match carried to a finish @core', () => {
     // Both see a result.
     await expect(one.page.getByText(/victory|defeated/i).first()).toBeVisible({ timeout: 20_000 });
     await expect(two.page.getByText(/victory|defeated/i).first()).toBeVisible({ timeout: 20_000 });
+
+    // Spec §7.5's nudge: these players are guests, so the result offers an account.
+    await expect(one.page.getByRole('link', { name: /create an account/i })).toBeVisible({
+      timeout: 20_000,
+    });
 
     /**
      * A reload must not resurrect the finished game.
