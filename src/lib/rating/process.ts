@@ -29,6 +29,8 @@ export interface RatingSnapshot extends GlickoRating {
    * come back with the rating itself — see `preMatchRating`.
    */
   readonly lastRatingPeriodAt: Date | null;
+  /** Rated games played, for the provisional progress shown at the end of a match. */
+  readonly gamesRated: number;
 }
 
 export interface ApplyRatedResultInput {

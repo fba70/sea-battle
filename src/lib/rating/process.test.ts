@@ -20,7 +20,7 @@ const RATED_AT = new Date('2026-09-22T12:00:00Z');
 
 /** A player who has just played: no elapsed time, so no RD inflation. */
 function active(userId: string, rating: number, rd: number): RatingSnapshot {
-  return { userId, rating, rd, lastRatingPeriodAt: RATED_AT };
+  return { userId, rating, rd, lastRatingPeriodAt: RATED_AT, gamesRated: 12 };
 }
 
 /** A player whose last rated match was `days` before the game being rated. */
@@ -30,6 +30,7 @@ function awayFor(userId: string, rating: number, rd: number, days: number): Rati
     rating,
     rd,
     lastRatingPeriodAt: new Date(RATED_AT.getTime() - days * 24 * 60 * 60 * 1000),
+    gamesRated: 12,
   };
 }
 
@@ -411,7 +412,7 @@ describe('inactivity inflates RD before the game is rated (spec §7.6)', () => {
   it('does not inflate a rating row that has never been through a rated match', async () => {
     const { store, applications } = fakeStore({
       ratings: [
-        { userId: PLAYER_A, rating: 1500, rd: 350, lastRatingPeriodAt: null },
+        { userId: PLAYER_A, rating: 1500, rd: 350, lastRatingPeriodAt: null, gamesRated: 0 },
         active(PLAYER_B, 1500, 60),
       ],
     });

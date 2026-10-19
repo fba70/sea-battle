@@ -59,6 +59,7 @@ export function createRatingStore(database: Database = defaultDb): RatingStore {
           rating: ratings.rating,
           rd: ratings.rd,
           lastRatingPeriodAt: ratings.lastRatingPeriodAt,
+          gamesRated: ratings.gamesRated,
         })
         .from(ratings)
         .where(and(inArray(ratings.userId, [...userIds]), eq(ratings.mode, mode)));

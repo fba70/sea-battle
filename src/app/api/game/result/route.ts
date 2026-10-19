@@ -2,6 +2,7 @@ import { completeLiveGame } from '@/lib/game/live-game';
 import { createLiveGameStore } from '@/lib/game/live-game-store';
 import { createRatingStore } from '@/lib/rating/rating-store';
 import { processFinishedGame } from '@/lib/rating/process';
+import { loadRatingReport, UNRATED_REPORT } from '@/lib/rating/report';
 import { serverEnv } from '@/lib/env';
 import { RESULT_SIGNATURE_HEADER, verifyResultReport } from '@/server/result-report';
 
@@ -43,9 +44,23 @@ export async function POST(request: Request): Promise<Response> {
 
   // An aborted game carries no rating: nobody won it, so there was nothing to rate
   // (spec §4, and the agreed rule for a match both players walked away from).
-  if (outcome.status === 'completed' || outcome.status === 'already_completed') {
-    return Response.json({ status: outcome.status, rating: outcome.rating.status });
+  if (outcome.status !== 'completed' && outcome.status !== 'already_completed') {
+    return Response.json({ status: outcome.status, report: UNRATED_REPORT });
   }
 
-  return Response.json({ status: outcome.status });
+  /**
+   * The realtime layer relays this to both players (spec §7.6).
+   *
+   * Read back from the row rather than taken from the calculation, so a *retried*
+   * report — which rates nothing, because the first one already did — still answers
+   * with the numbers. That is what makes the end-of-match display survive a
+   * reconnect.
+   */
+  const report = await loadRatingReport(createRatingStore(), verified.report.gameId);
+
+  return Response.json({
+    status: outcome.status,
+    rating: outcome.rating.status,
+    report,
+  });
 }

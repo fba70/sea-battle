@@ -347,6 +347,10 @@
       "confirmQuestion": "Aufgeben und diese Partie verlieren?",
       "confirm": "Ja, aufgeben",
       "cancel": "Weiterspielen"
+    },
+    "rating": {
+      "unrated": "Diese Partie wurde nicht gewertet.",
+      "provisional": "{played} von {total} gewerteten Partien — {remaining, plural, =1 {noch # bis zur Platzierung} other {noch # bis zur Platzierung}}."
     }
   },
   "leaderboard": {

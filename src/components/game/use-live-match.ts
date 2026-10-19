@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { ensureGuestSession } from '@/lib/guest-session';
 import type { ClientIntent, ServerEvent, SnapshotTimers } from '@/server/session/protocol';
+
+/** What the server says this match did to the viewer's rating (spec §7.6). */
+export type RatingOutcome = Extract<ServerEvent, { type: 'rating_applied' }>;
 import type { PlayerView } from '@/game/view';
 import type { PlayerSlot } from '@/game/types';
 
@@ -35,6 +38,11 @@ export interface LiveMatch {
    * countdown, never a wrong outcome.
    */
   readonly timers: SnapshotTimers | null;
+  /**
+   * Null until the app has recorded the result, which lands shortly after the game
+   * ends. Re-sent on every connect, so a reload gets it back.
+   */
+  readonly rating: RatingOutcome | null;
   send(intent: ClientIntent): void;
   clearError(): void;
 }
@@ -58,6 +66,7 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastShot, setLastShot] = useState<LiveMatch['lastShot']>(null);
   const [timers, setTimers] = useState<SnapshotTimers | null>(null);
+  const [rating, setRating] = useState<RatingOutcome | null>(null);
 
   const socketRef = useRef<WebSocket | null>(null);
   const seqRef = useRef(0);
@@ -152,6 +161,9 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
               setTimers(message.timers);
               setStatus('connected');
               break;
+            case 'rating_applied':
+              setRating(message);
+              break;
             case 'fire_result': {
               const cell = message.cells[0];
               if (cell) {
@@ -221,5 +233,5 @@ export function useLiveMatch(gameId: string, wsUrl: string): LiveMatch {
     };
   }, [gameId, wsUrl]);
 
-  return { status, view, seat, lastError, lastShot, timers, send, clearError };
+  return { status, view, seat, lastError, lastShot, timers, rating, send, clearError };
 }

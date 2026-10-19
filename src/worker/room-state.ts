@@ -57,6 +57,26 @@ export interface PersistedRoom {
    * piggyback a retry on; this bounds the retries the room books for itself.
    */
   readonly reportAttempts?: number;
+  /**
+   * What the app said the finished match did to each player's rating (spec §7.6).
+   *
+   * Persisted so the end-of-match display survives a reload: a player who comes
+   * back is told again, rather than having missed a single live message.
+   */
+  readonly rating?: PersistedRating;
+}
+
+/** Mirrors `RatingReport` in src/lib/rating, kept structural to avoid the import. */
+export interface PersistedRating {
+  readonly rated: boolean;
+  readonly a?: SeatRatingSummary | null;
+  readonly b?: SeatRatingSummary | null;
+}
+
+export interface SeatRatingSummary {
+  readonly delta: number;
+  readonly rating: number;
+  readonly gamesRated: number;
 }
 
 export const EMPTY_ROOM = (gameId: string): PersistedRoom => ({
@@ -78,6 +98,7 @@ export function encodeRoom(room: {
   seq: Readonly<Record<PlayerSlot, number>>;
   reported?: boolean;
   reportAttempts?: number;
+  rating?: PersistedRating | undefined;
 }): PersistedRoom {
   return {
     v: ROOM_STATE_VERSION,
@@ -89,7 +110,33 @@ export function encodeRoom(room: {
     reported: room.reported ?? false,
     clock: room.session?.clock ?? IDLE_CLOCK,
     reportAttempts: room.reportAttempts ?? 0,
+    ...(room.rating === undefined ? {} : { rating: room.rating }),
   };
+}
+
+/** Reads back a stored rating report, discarding anything malformed. */
+function restoreRating(raw: unknown): PersistedRating | undefined {
+  if (typeof raw !== 'object' || raw === null) {
+    return undefined;
+  }
+
+  const record = raw as Record<string, unknown>;
+  const seat = (value: unknown): SeatRatingSummary | null => {
+    if (typeof value !== 'object' || value === null) {
+      return null;
+    }
+    const entry = value as Record<string, unknown>;
+    const numbers = [entry.delta, entry.rating, entry.gamesRated];
+    return numbers.every((n) => typeof n === 'number' && Number.isFinite(n))
+      ? {
+          delta: entry.delta as number,
+          rating: entry.rating as number,
+          gamesRated: entry.gamesRated as number,
+        }
+      : null;
+  };
+
+  return { rated: record.rated === true, a: seat(record.a), b: seat(record.b) };
 }
 
 /** Reads back a stored clock, falling back to an idle one rather than trusting junk. */
@@ -185,6 +232,7 @@ export function restoreRoom(raw: unknown, fallbackGameId: string): RestoreResult
       typeof record.reportAttempts === 'number' && record.reportAttempts >= 0
         ? record.reportAttempts
         : 0,
+    ...(restoreRating(record.rating) === undefined ? {} : { rating: restoreRating(record.rating) }),
   };
 
   if (room.state === null) {

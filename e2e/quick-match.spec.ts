@@ -131,6 +131,22 @@ async function playToTheEnd(one: Page, two: Page): Promise<void> {
   throw new Error('the match did not finish in time');
 }
 
+/** A fresh registered account, so the pair lands in the rated pool. */
+async function registerPlayer(page: Page): Promise<string> {
+  const tag = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const name = `Rated_${tag}`.slice(0, 20);
+
+  await page.goto('/en/account');
+  await page.getByRole('tab', { name: /create account/i }).click();
+  await page.getByLabel(/display name/i).fill(name);
+  await page.getByLabel(/email/i).fill(`${name.toLowerCase()}@example.test`);
+  await page.getByLabel(/password/i).fill('a-good-enough-password');
+  await page.getByRole('button', { name: /create account/i }).click();
+  await expect(page.getByRole('link', { name })).toBeVisible({ timeout: 30_000 });
+
+  return name;
+}
+
 test.describe('quick match, two independent guests @core @queue', () => {
   test('two waiting players are paired and both reach placement', async ({ browser }) => {
     const first = await browser.newContext();
@@ -278,6 +294,75 @@ test.describe('a quick match carried to a finish @core @queue', () => {
 
     for (const player of [one, two]) {
       await player.page.request.delete('/api/match/quick').catch(() => undefined);
+    }
+
+    await firstContext.close();
+    await secondContext.close();
+  });
+});
+
+test.describe('a rated match between two accounts @core @queue', () => {
+  test('moves both ratings, shows the change, and matches the profiles', async ({ browser }) => {
+    /**
+     * The first end-to-end rated game. Rated play needs two registered accounts, so
+     * until accounts existed this whole path — pairing, the Glicko update, the
+     * number on the result screen, the profile — had never run together.
+     */
+    const firstContext = await browser.newContext();
+    const secondContext = await browser.newContext();
+    const one = await newPlayer(firstContext);
+    const two = await newPlayer(secondContext);
+
+    const nameOne = await registerPlayer(one.page);
+    const nameTwo = await registerPlayer(two.page);
+
+    for (const player of [one, two]) {
+      await player.page.goto('/en/play/quick');
+      await player.page.getByRole('button', { name: /find an opponent/i }).click();
+    }
+
+    await reachPlacement(one.page);
+    await reachPlacement(two.page);
+
+    for (const player of [one, two]) {
+      await player.page.getByRole('button', { name: /auto-place/i }).click();
+      await player.page
+        .getByRole('button', { name: /place all ten ships|start the battle/i })
+        .click();
+    }
+    for (const player of [one, two]) {
+      await expect(player.page.getByRole('grid')).toHaveCount(2, { timeout: 30_000 });
+    }
+
+    await playToTheEnd(one.page, two.page);
+
+    // Both see a rating change: one up, one down, and a new rating beside it.
+    for (const player of [one, two]) {
+      await expect(player.page.getByText(/^[+−]\d+$/)).toBeVisible({ timeout: 30_000 });
+      await expect(player.page.getByText(/this game was unrated/i)).toHaveCount(0);
+    }
+
+    // The profiles agree with what the result screen said.
+    for (const [page, name] of [
+      [one.page, nameOne],
+      [two.page, nameTwo],
+    ] as const) {
+      await page.goto('/en/leaderboard');
+      await page.getByRole('link', { name: /view your profile/i }).click();
+
+      await expect(page.getByRole('heading', { level: 1, name })).toBeVisible({ timeout: 30_000 });
+      // One rated game played, and it is in the history with its rating change.
+      await expect(page.getByText(/1 rated game/i)).toBeVisible();
+      await expect(
+        page
+          .getByRole('list')
+          .getByText(/^[+−]\d+$/)
+          .first(),
+      ).toBeVisible();
+    }
+
+    for (const player of [one, two]) {
+      expect(player.problems, 'console').toEqual([]);
     }
 
     await firstContext.close();

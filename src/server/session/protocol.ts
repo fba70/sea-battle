@@ -282,6 +282,25 @@ export type ServerEvent =
       readonly winner: PlayerSlot | null;
       readonly reason: ResultReason;
     }
+  | {
+      /**
+       * What the finished match did to this player's rating (spec §7.6, §9's
+       * `game_over { ratingDelta, newRating }`).
+       *
+       * Sent separately from `game_over` rather than inside it, because the rating
+       * is applied by the app after the realtime layer reports the result — a
+       * second or so later. The result is shown at once and this fills it in, and
+       * it is re-sent on every connect so a reload does not lose it.
+       */
+      readonly type: 'rating_applied';
+      readonly rated: boolean;
+      /** Absent for an unrated match, or while the rating has not landed. */
+      readonly summary?: {
+        readonly delta: number;
+        readonly rating: number;
+        readonly gamesRated: number;
+      };
+    }
   | { readonly type: 'error'; readonly code: SessionErrorCode; readonly message: string };
 
 export type ServerEventType = ServerEvent['type'];

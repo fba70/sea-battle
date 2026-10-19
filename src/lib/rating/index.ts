@@ -19,4 +19,5 @@ export * from './eligibility';
 export * from './leaderboard';
 export * from './policy';
 export * from './process';
+export * from './report';
 export * from './rating-store';

@@ -25,6 +25,7 @@ import {
 import { FleetTray } from './fleet-tray';
 import { GameOverOverlay } from './game-over-overlay';
 import { GraceCountdown, MatchClock } from './match-clock';
+import { RatingChange } from './rating-change';
 import { ResignButton } from './resign-button';
 import { WaitingPanel } from './waiting-panel';
 import { TurnBanner, type BannerState } from './status-panel';
@@ -416,9 +417,16 @@ export function LiveMatchScreen({
                     : view.opponent.hits / view.opponent.shotsFired,
                 shipsLeft: view.own.shipsRemaining,
               }}
-              // Spec §7.5's "prompt to save my progress after a good game". Renders
-              // nothing for anyone who already has an account.
-              footer={<GuestUpsell />}
+              footer={
+                <div className="flex flex-col items-center gap-2">
+                  {/* Spec §7.6's rating change, which arrives a moment after the
+                      result and fills itself in. */}
+                  <RatingChange outcome={match.rating} />
+                  {/* Spec §7.5's prompt to save your progress. Renders nothing for
+                      anyone who already has an account. */}
+                  <GuestUpsell />
+                </div>
+              }
               actions={[
                 onNewMatch
                   ? { label: tm('live.result.again'), onClick: onNewMatch }

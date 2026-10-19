@@ -280,6 +280,47 @@ test.describe('timers, disconnects and resigning @core', () => {
   });
 });
 
+test.describe('the rating line after a room match @core', () => {
+  test('labels the match unrated, and says so again after a reload', async ({ browser }) => {
+    /**
+     * Private rooms are never rated (spec §4), so the absence of a number has to be
+     * explained rather than left as a gap. The reload is the other half: the rating
+     * line is pushed once when the app records the result, and re-sent on every
+     * connect — otherwise coming back would lose it.
+     */
+    const hostContext = await browser.newContext();
+    const guestContext = await browser.newContext();
+    const host = await newPlayer(hostContext);
+    const guest = await newPlayer(guestContext);
+
+    await host.page.goto('/en/play/room');
+    await host.page.getByRole('button', { name: /create a room/i }).click();
+    await expect(host.page).toHaveURL(/\/room\/[A-Z0-9]{6}$/, { timeout: 20_000 });
+
+    await guest.page.goto(host.page.url());
+    await reachPlacement(guest.page);
+    await reachPlacement(host.page);
+
+    await host.page.getByRole('button', { name: /^resign$/i }).click();
+    await host.page.getByRole('button', { name: /yes, resign/i }).click();
+
+    for (const player of [host, guest]) {
+      await expect(player.page.getByText(/this game was unrated/i)).toBeVisible({
+        timeout: 20_000,
+      });
+    }
+
+    // Reconnecting must bring it back, not leave a gap where the rating line was.
+    await host.page.reload();
+    await expect(host.page.getByText(/this game was unrated/i)).toBeVisible({ timeout: 30_000 });
+
+    expect(host.problems, 'host console').toEqual([]);
+
+    await hostContext.close();
+    await guestContext.close();
+  });
+});
+
 test.describe('German renders the live flow correctly', () => {
   test('no missing keys in the room and placement screens', async ({ browser }) => {
     const a = await browser.newContext({ locale: 'de-DE' });

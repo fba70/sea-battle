@@ -22,6 +22,7 @@ import {
   encodeRoom,
   restoreRoom,
   startSession,
+  type PersistedRating,
   type PersistedRoom,
   type RoomSeats,
 } from './room-state';
@@ -44,6 +45,17 @@ function autoPlaceSeed(): number {
   const draw = new Uint32Array(1);
   crypto.getRandomValues(draw);
   return draw[0] as number;
+}
+
+/** One seat's view of the rating report — never the opponent's numbers. */
+function ratingEvent(rating: PersistedRating, seat: PlayerSlot): ServerEvent {
+  const summary = seat === 'a' ? rating.a : rating.b;
+
+  return {
+    type: 'rating_applied',
+    rated: rating.rated,
+    ...(rating.rated && summary ? { summary } : {}),
+  };
 }
 
 /** How long to wait before retrying a result report, and how many times to try. */
@@ -131,6 +143,10 @@ export class GameRoom extends DurableObject<Env> {
     // Opening a game whose result never reached the app is the moment to try again.
     // No-ops for anything unfinished or already reported.
     await this.reportResultIfFinished();
+
+    // Spec §7.6's rating change, re-sent on every connect so a reload or a
+    // reconnect does not lose it. Nothing is sent for a match still in play.
+    this.sendRatingTo(server, ticket.claims.seat);
 
     // A fresh snapshot on every connect is what makes reconnection safe: the client is
     // never asked to reconcile, it is simply told the authoritative truth.
@@ -392,6 +408,7 @@ export class GameRoom extends DurableObject<Env> {
       },
       reported: room.reported,
       reportAttempts: room.reportAttempts ?? 0,
+      rating: room.rating,
     });
 
     this.room = next;
@@ -539,8 +556,16 @@ export class GameRoom extends DurableObject<Env> {
         return;
       }
 
-      this.room = { ...room, reported: true, reportAttempts: 0 };
+      // The app answers with what the match did to each player's rating; the
+      // players are told as soon as it lands (spec §7.6).
+      const rating = await this.readRatingReport(response);
+
+      this.room = { ...room, reported: true, reportAttempts: 0, ...(rating ? { rating } : {}) };
       await this.persist();
+
+      if (rating) {
+        this.announceRating(rating);
+      }
     } catch {
       // Left unreported on purpose; `armAlarm` books the retry.
       await this.recordFailedReport();
@@ -554,6 +579,34 @@ export class GameRoom extends DurableObject<Env> {
     }
     this.room = { ...room, reportAttempts: (room.reportAttempts ?? 0) + 1 };
     await this.persist();
+  }
+
+  /** Pulls the rating report out of the app's response, tolerating anything else. */
+  private async readRatingReport(response: Response): Promise<PersistedRating | undefined> {
+    try {
+      const body = (await response.json()) as { report?: PersistedRating };
+      return body.report && typeof body.report.rated === 'boolean' ? body.report : undefined;
+    } catch {
+      // A result that was accepted but answered oddly still counts as reported;
+      // the rating simply has nothing to show.
+      return undefined;
+    }
+  }
+
+  /** Tells each seat about its own rating change, and only its own. */
+  private announceRating(rating: PersistedRating): void {
+    for (const seat of ['a', 'b'] as const) {
+      for (const socket of this.ctx.getWebSockets(seat)) {
+        this.sendTo(socket, ratingEvent(rating, seat));
+      }
+    }
+  }
+
+  private sendRatingTo(ws: WebSocket, seat: PlayerSlot): void {
+    const rating = this.room?.rating;
+    if (rating) {
+      this.sendTo(ws, ratingEvent(rating, seat));
+    }
   }
 
   private sendTo(ws: WebSocket, event: ServerEvent): void {

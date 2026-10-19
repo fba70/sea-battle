@@ -261,6 +261,81 @@ describe('resigning', () => {
   });
 });
 
+describe('the rating after a rated match', () => {
+  /** Stands in for what the app answers the result report with. */
+  const REPORT = {
+    rated: true,
+    a: { delta: 12.4, rating: 1512.4, gamesRated: 11 },
+    b: { delta: -12.4, rating: 1487.6, gamesRated: 7 },
+  };
+
+  async function storeRating(gameId: string): Promise<void> {
+    await runInDurableObject(stubFor(gameId), async (instance: Record<string, unknown>, state) => {
+      const room = (await state.storage.get('room')) as Record<string, unknown>;
+      await state.storage.put('room', { ...room, rating: REPORT });
+      instance.room = null;
+      instance.session = null;
+    });
+  }
+
+  it('tells a returning player their own numbers, not their opponent’s', async () => {
+    /**
+     * The recovery path: the live message is sent once when the app records the
+     * result, so a reload would miss it. The room keeps the report and re-sends it
+     * on every connect.
+     */
+    const { gameId, a } = await startedMatch();
+    a.send({ type: 'resign' }, 1);
+    await settle();
+    await storeRating(gameId);
+
+    const returning = await connect(gameId, 'player-a', 'a');
+    await settle();
+
+    const event = returning.received.find((e) => e.type === 'rating_applied');
+    expect(event).toEqual({ type: 'rating_applied', rated: true, summary: REPORT.a });
+  });
+
+  it('gives each seat its own side of the result', async () => {
+    const { gameId, a } = await startedMatch();
+    a.send({ type: 'resign' }, 1);
+    await settle();
+    await storeRating(gameId);
+
+    const seatB = await connect(gameId, 'player-b', 'b');
+    await settle();
+
+    const event = seatB.received.find((e) => e.type === 'rating_applied');
+    expect(event).toEqual({ type: 'rating_applied', rated: true, summary: REPORT.b });
+  });
+
+  it('says a match was unrated rather than leaving the player waiting', async () => {
+    const { gameId, a } = await startedMatch();
+    a.send({ type: 'resign' }, 1);
+    await settle();
+
+    await runInDurableObject(stubFor(gameId), async (instance: Record<string, unknown>, state) => {
+      const room = (await state.storage.get('room')) as Record<string, unknown>;
+      await state.storage.put('room', { ...room, rating: { rated: false } });
+      instance.room = null;
+      instance.session = null;
+    });
+
+    const returning = await connect(gameId, 'player-a', 'a');
+    await settle();
+
+    expect(returning.received.find((e) => e.type === 'rating_applied')).toEqual({
+      type: 'rating_applied',
+      rated: false,
+    });
+  });
+
+  it('says nothing about rating while the match is still being played', async () => {
+    const { a } = await startedMatch();
+    expect(a.received.some((event) => event.type === 'rating_applied')).toBe(false);
+  });
+});
+
 describe('a player drops', () => {
   it('warns the player who is still there, with a deadline', async () => {
     const { a, b } = await startedMatch();

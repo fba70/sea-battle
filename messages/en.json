@@ -347,6 +347,10 @@
       "confirmQuestion": "Resign and lose this game?",
       "confirm": "Yes, resign",
       "cancel": "Keep playing"
+    },
+    "rating": {
+      "unrated": "This game was unrated.",
+      "provisional": "{played} of {total} rated matches — {remaining, plural, =1 {# more to be ranked} other {# more to be ranked}}."
     }
   },
   "leaderboard": {
