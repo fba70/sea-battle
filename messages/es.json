@@ -7,14 +7,494 @@
     "play": "Jugar",
     "howToPlay": "Cómo jugar",
     "faq": "Preguntas frecuentes",
-    "support": "Apoya el proyecto"
+    "support": "Apoya el proyecto",
+    "label": "Principal",
+    "footerLabel": "Pie de página",
+    "leaderboard": "Clasificación"
   },
   "landing": {
     "title": "Hunde la flota.",
-    "subtitle": "Dispara tu primer tiro en segundos, sin necesidad de cuenta."
+    "subtitle": "Coloca tu flota, supera al bot y hunde los diez barcos.",
+    "playVsBot": "Jugar contra el bot",
+    "playOnline": "Jugar en línea",
+    "facts": {
+      "board": "Tablero de 10 x 10, diez barcos",
+      "rules": "Reglas clásicas: un acierto te da otro disparo",
+      "bots": "Tres niveles de bot"
+    }
+  },
+  "game": {
+    "title": "Partida contra el bot",
+    "loading": "Preparando el campo de batalla…",
+    "keyboardHint": "Las flechas mueven el cursor; Intro o Espacio disparan. Pulsa R al colocar para girar.",
+    "yourTurn": "Tu turno",
+    "opponentTurn": "Turno del rival",
+    "shipsRemaining": "{count, plural, =0 {No quedan barcos} one {Queda # barco} other {Quedan # barcos}}",
+    "shotsFired": "{count, plural, =0 {Ningún disparo} one {# disparo} other {# disparos}}",
+    "difficulty": {
+      "label": "Dificultad del bot",
+      "easy": "Fácil",
+      "medium": "Medio",
+      "hard": "Difícil",
+      "easyHint": "Dispara al azar. Un calentamiento tranquilo.",
+      "mediumHint": "Busca siguiendo un patrón y remata cualquier barco que toque.",
+      "hardHint": "Deduce dónde tienen que estar tus barcos. Realmente duro.",
+      "playingAgainst": "Juegas contra {level}"
+    },
+    "ship": {
+      "battleship": "Acorazado",
+      "cruiser": "Crucero",
+      "destroyer": "Destructor",
+      "submarine": "Submarino"
+    },
+    "board": {
+      "yourFleet": "Tu flota",
+      "enemyWaters": "Aguas enemigas",
+      "placementGrid": "Tu flota: coloca tus barcos",
+      "yourGrid": "Tu flota bajo fuego",
+      "enemyGrid": "Aguas enemigas: elige un objetivo"
+    },
+    "placement": {
+      "fleetTray": "Barcos por colocar",
+      "deckCount": "{count, plural, one {# casilla} other {# casillas}}",
+      "instructions": "Arrastra un barco al tablero o selecciónalo y toca una casilla. Toca un barco ya colocado para moverlo. Los barcos no pueden tocarse, ni siquiera en diagonal.",
+      "rotate": "Girar (R)",
+      "autoPlace": "Colocación automática",
+      "reset": "Vaciar tablero",
+      "start": "Empezar la batalla",
+      "incomplete": "Coloca los diez barcos",
+      "done": "Colocado"
+    },
+    "status": {
+      "placement": "Coloca tu flota para empezar",
+      "yours": "Tu turno: dispara",
+      "opponent": "El rival está apuntando…",
+      "won": "¡Victoria! Flota enemiga destruida",
+      "lost": "Derrota: tu flota se ha perdido"
+    },
+    "result": {
+      "wonBody": "Has hundido todos los barcos enemigos. ¿Otra partida?",
+      "lostBody": "El bot ha hundido tu flota primero. ¿Lo intentas de nuevo?",
+      "wonTitle": "Victoria",
+      "lostTitle": "Derrota"
+    },
+    "action": {
+      "playAgain": "Jugar otra vez",
+      "backHome": "Volver al inicio"
+    },
+    "stats": {
+      "enemyShips": "Quedan al rival",
+      "yourShips": "Te quedan",
+      "shotsFired": "Disparos",
+      "hits": "Aciertos",
+      "accuracy": "Precisión"
+    },
+    "log": {
+      "title": "Últimos disparos",
+      "empty": "Todavía no hay disparos.",
+      "human": "Tú",
+      "bot": "Bot",
+      "hit": "Tocado",
+      "miss": "Agua",
+      "sunk": "Hundió el {ship}"
+    },
+    "cell": {
+      "state": "{cell}, {state}",
+      "fireAt": "{cell}, {state}. Dispara aquí.",
+      "unknown": "sin explorar",
+      "water": "agua",
+      "empty": "agua vacía",
+      "ship": "tu barco",
+      "hit": "tocado",
+      "sunk": "hundido",
+      "miss": "agua",
+      "knownEmpty": "vacío conocido"
+    },
+    "placed": "{placed} de {total} barcos colocados",
+    "shipsLeftShort": "Quedan {count}",
+    "allPlaced": "Flota lista",
+    "thinking": "Pensando",
+    "announce": {
+      "youHit": "Tu disparo en {cell} ha tocado.",
+      "youMiss": "Tu disparo en {cell} ha caído al agua.",
+      "youSunk": "Tu disparo en {cell} ha hundido el {ship}.",
+      "botHit": "El bot ha tocado tu flota en {cell}.",
+      "botMiss": "El bot ha fallado en {cell}.",
+      "botSunk": "El bot ha hundido tu {ship} en {cell}."
+    },
+    "summary": {
+      "title": "Resumen final"
+    },
+    "sound": {
+      "mute": "Silenciar el sonido",
+      "unmute": "Activar el sonido"
+    },
+    "help": "Cómo jugar"
   },
   "locale": {
     "label": "Idioma",
     "switcher": "Cambiar idioma"
+  },
+  "howToPlay": {
+    "title": "Cómo jugar",
+    "intro": "La batalla naval es un duelo de deducción. Las dos flotas están ocultas y descubres los barcos enemigos disparo a disparo. Si hace años que no juegas, estos cuatro pasos son todo el juego.",
+    "goal": {
+      "title": "El objetivo",
+      "body": "Hunde los diez barcos enemigos antes de que hundan los tuyos. Nunca ves dónde está su flota: solo lo que revelan tus disparos."
+    },
+    "place": {
+      "title": "Coloca tu flota",
+      "board": "El tablero es una cuadrícula de 10 x 10, con columnas de la A a la J y filas del 1 al 10. Colocas diez barcos que ocupan veinte casillas en total:",
+      "fleet": {
+        "four": "1 acorazado de 4 casillas",
+        "three": "2 cruceros de 3 casillas",
+        "two": "3 destructores de 2 casillas",
+        "one": "4 submarinos de 1 casilla"
+      },
+      "orientation": "Cada barco va en línea recta, en horizontal o en vertical —nunca en diagonal— y debe caber entero en el tablero. Arrastra un barco a la cuadrícula o selecciónalo y toca una casilla. Pulsa R o el botón Girar para cambiar entre horizontal y vertical. La colocación automática llena el tablero por ti.",
+      "fleetDiagram": "Los diez barcos de una flota: uno de cuatro casillas, dos de tres, tres de dos y cuatro de una sola casilla."
+    },
+    "touching": {
+      "title": "Separa tus barcos",
+      "body": "Los barcos no pueden tocarse. Tiene que haber al menos una casilla libre entre dos barcos cualesquiera.",
+      "diagonals": "Esto incluye las esquinas: dos barcos que solo se tocan en diagonal siguen estando en contacto, y la colocación se rechaza.",
+      "help": "No hace falta que cuentes casillas. La vista previa se pone roja y el tablero tiembla cuando una posición es ilegal, así que solo puedes colocar flotas válidas.",
+      "legalDiagram": "Dos barcos separados por una fila libre: una colocación válida.",
+      "illegalDiagram": "Dos barcos que se tocan en una esquina: rechazado, porque el contacto en diagonal también cuenta.",
+      "allowed": "Permitido",
+      "notAllowed": "No permitido"
+    },
+    "fire": {
+      "title": "Disparad por turnos",
+      "turns": "Disparas tú primero. En tu turno eliges una casilla de la cuadrícula enemiga y haces un solo disparo. Un disparo es agua, un acierto, o el acierto que hunde un barco.",
+      "againLead": "Un acierto te da otro disparo.",
+      "again": "Sigue disparando mientras sigas acertando. El turno pasa al rival solo cuando fallas.",
+      "noRepeat": "No puedes disparar dos veces a la misma casilla: las casillas ya resueltas no se pueden seleccionar.",
+      "outcomesDiagram": "Marcas de la cuadrícula de tiro: un anillo hueco para el agua, un estallido naranja para un acierto y un bloque rojo cruzado para parte de un barco hundido."
+    },
+    "sink": {
+      "title": "Hunde la flota",
+      "body": "Cuando todas las casillas de un barco han sido tocadas, el barco se hunde y se revela su silueta completa.",
+      "buffer": "Como los barcos nunca pueden tocarse, todas las casillas alrededor de un barco hundido son necesariamente agua. Se marcan solas con puntos pequeños y no puedes desperdiciar disparos en ellas.",
+      "win": "Quien hunde primero los diez barcos del rival gana de inmediato.",
+      "bufferDiagram": "Un barco hundido de dos casillas rodeado de puntos que marcan las casillas que ya se sabe que están vacías."
+    },
+    "bots": {
+      "title": "Los tres bots",
+      "easy": {
+        "name": "Fácil",
+        "body": "Dispara a casillas al azar. Un calentamiento relajado mientras coges el tacto del tablero."
+      },
+      "medium": {
+        "name": "Medio",
+        "body": "Busca siguiendo un patrón y, en cuanto acierta, recorre el barco hasta hundirlo."
+      },
+      "hard": {
+        "name": "Difícil",
+        "body": "Calcula qué casillas podrían ocupar aún tus barcos y dispara donde es más probable que haya uno. Un rival realmente duro."
+      }
+    },
+    "salvo": {
+      "title": "Modo salva",
+      "badge": "Todavía no disponible",
+      "body": "Hay previsto un modo más rápido: en lugar de un disparo por turno, lanzas una salva con tantos disparos como barcos te queden y eliges todos los objetivos antes de resolver ninguno. El turno siempre pasa después: en el modo salva un acierto no da otro tiro. Hoy SeaDuel juega con las reglas clásicas descritas arriba."
+    },
+    "cta": "Jugar contra el bot",
+    "faqLink": "Leer las preguntas frecuentes"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "intro": "Respuestas breves sobre lo que SeaDuel hace hoy.",
+    "items": {
+      "registration": {
+        "q": "¿Necesito una cuenta?",
+        "a": "No. Abre la página y juega: contra el bot o contra otra persona. La cuenta es opcional y sirve para conservar tu puntuación, tu puesto en la clasificación y tus partidas terminadas. Solo hacen falta un correo y una contraseña, y nunca te escribiremos. Todavía no se puede restablecer la contraseña, así que guárdala en un sitio seguro."
+      },
+      "free": {
+        "q": "¿Es gratis?",
+        "a": "Sí. SeaDuel es gratuito, no tiene anuncios y ninguna función está detrás de un pago."
+      },
+      "bot": {
+        "q": "¿Contra quién juego?",
+        "a": "Contra quien quieras. El bot juega en nivel Fácil, Medio o Difícil, sigue exactamente tus mismas reglas y solo ve de tu tablero lo que verías tú: no puede mirar dónde están tus barcos. También puedes jugar en línea contra otra persona. Las partidas contra el bot nunca puntúan."
+      },
+      "friend": {
+        "q": "¿Puedo jugar contra un amigo?",
+        "a": "Sí. Crea una sala privada y comparte el código o el enlace: ninguno de los dos necesita cuenta. Y si prefieres jugar contra alguien desconocido, la partida rápida te empareja con quien esté esperando."
+      },
+      "mobile": {
+        "q": "¿Funciona en el móvil?",
+        "a": "Sí. SeaDuel funciona en el navegador en móviles, tabletas y ordenadores, y no hay nada que instalar. En una pantalla táctil puedes arrastrar un barco a la cuadrícula o tocar para colocarlo, y tocar una casilla para disparar."
+      },
+      "rating": {
+        "q": "¿Hay puntuación o clasificación?",
+        "a": "Sí. Puntúan las partidas rápidas entre dos personas registradas, y tu puntuación cambia después de cada una. Las partidas contra el bot, en salas privadas o como invitado no puntúan nunca. Apareces en la clasificación cuando has jugado {games} partidas puntuadas, tu puntuación se ha asentado por debajo de una desviación de {rd} y has terminado una partida puntuada en los últimos {days} días."
+      },
+      "data": {
+        "q": "¿Qué guardáis sobre mí?",
+        "a": "Sin cuenta: tu navegador recuerda el idioma y si el sonido está silenciado, y el servidor crea una identidad de invitado temporal para que funcionen las partidas en línea. Con cuenta: tu correo, tu contraseña (cifrada, nunca legible), tu nombre visible, tu puntuación y tus partidas terminadas. Sin anuncios y sin rastreadores de terceros. Todavía no puedes borrar la cuenta por tu cuenta."
+      }
+    },
+    "cta": "Jugar contra el bot",
+    "rulesLink": "Leer cómo jugar"
+  },
+  "multiplayer": {
+    "hub": {
+      "title": "Jugar en línea",
+      "subtitle": "Enfréntate a otra persona en tiempo real. Tu flota sigue oculta: el servidor es el árbitro.",
+      "quick": "Partida rápida",
+      "quickHint": "Te emparejamos con otra persona que esté esperando. No hay nada que configurar.",
+      "quickAction": "Buscar rival",
+      "room": "Partida privada",
+      "roomHint": "Crea una sala y comparte el código o el enlace con alguien que conozcas.",
+      "roomAction": "Crear sala o unirse",
+      "note": "Las partidas de invitado no puntúan. En ambos casos se empieza colocando la flota en cuanto llegue tu rival."
+    },
+    "room": {
+      "title": "Sala privada",
+      "create": "Crear una sala",
+      "creating": "Creando la sala…",
+      "joinTitle": "Unirse con un código",
+      "codeInput": "Código de sala",
+      "codePlaceholder": "BCDF23",
+      "join": "Unirse",
+      "joining": "Uniéndose…",
+      "codeLabel": "Código de sala:",
+      "share": "Comparte este enlace con tu amistad:",
+      "copy": "Copiar enlace",
+      "copied": "Copiado",
+      "waiting": "Esperando a que se una la otra persona…",
+      "errors": {
+        "invalid_code": "Ese código no parece correcto.",
+        "room_not_found": "No hay ninguna sala con ese código.",
+        "room_full": "Esa sala ya tiene dos jugadores.",
+        "already_finished": "Esa partida ya ha terminado.",
+        "not_signed_in": "Tu sesión ha caducado. Recarga la página e inténtalo de nuevo.",
+        "unknown": "Algo ha salido mal. Inténtalo de nuevo."
+      },
+      "waitingTitle": "Sala abierta",
+      "shareHint": "Envía el enlace o dicta el código. La partida empieza en cuanto llegue la otra persona.",
+      "backToMenu": "Volver al menú de juego",
+      "lead": "Juega con alguien que conoces. Crea una sala y comparte el código o el enlace: no hace falta cuenta.",
+      "createHint": "Recibes un código de 6 caracteres y un enlace para compartir.",
+      "or": "o"
+    },
+    "quick": {
+      "title": "Partida rápida",
+      "start": "Buscar rival",
+      "searching": "Buscando rival…",
+      "cancel": "Cancelar",
+      "poolRated": "Estás en la cola de una partida puntuada.",
+      "poolUnrated": "Estás en la cola de una partida sin puntuar. Regístrate para jugar partidas puntuadas.",
+      "matched": "Rival encontrado: empieza la partida.",
+      "searchingTitle": "Rastreando las aguas",
+      "searchingHint": "Te emparejaremos con la siguiente persona que busque partida.",
+      "idleTitle": "Partida rápida",
+      "idleHint": "Te buscamos rival: sin códigos, sin invitaciones, sin preparativos.",
+      "backToMenu": "Volver al menú de juego"
+    },
+    "live": {
+      "title": "Partida en directo",
+      "connecting": "Conectando…",
+      "connected": "Conectado",
+      "reconnecting": "Reconectando…",
+      "failed": "No se ha podido conectar. Recarga para intentarlo de nuevo.",
+      "waitingForOpponent": "Esperando a tu rival…",
+      "waitingHint": "La partida empieza en cuanto estéis conectados los dos.",
+      "confirmFleet": "Confirmar flota",
+      "waitingForFleet": "Flota confirmada. Esperando a que tu rival coloque la suya…",
+      "rejected": "El servidor lo ha rechazado: {reason}.",
+      "dismiss": "Descartar",
+      "failedTitle": "Conexión perdida",
+      "fleetReadyTitle": "Flota en posición",
+      "result": {
+        "wonBody": "Has hundido todos los barcos enemigos.",
+        "lostBody": "Tu rival ha hundido tu flota primero.",
+        "again": "Nueva partida",
+        "lobby": "Volver al menú de juego",
+        "abandonedTitle": "Nadie ha terminado",
+        "abandonedBody": "Ambas personas han abandonado la partida, así que no hay resultado. No se ha puntuado nada.",
+        "ended": {
+          "sunk_all": {
+            "won": "Has hundido su último barco.",
+            "lost": "Han hundido tu último barco."
+          },
+          "forfeit": {
+            "won": "Tu rival se ha rendido.",
+            "lost": "Te has rendido."
+          },
+          "timeout": {
+            "won": "A tu rival se le ha acabado el tiempo.",
+            "lost": "Se te ha acabado el tiempo demasiadas veces."
+          },
+          "disconnect": {
+            "won": "Tu rival no ha vuelto a tiempo.",
+            "lost": "No has vuelto a tiempo."
+          }
+        }
+      },
+      "opponentAway": "Tu rival ha perdido la conexión. Le quedan <time></time> para volver.",
+      "missedTurns": "Has perdido {missed} de {max} turnos. Si pierdes {max}, la partida se pierde por tiempo."
+    },
+    "clock": {
+      "seconds": "{seconds} s",
+      "paused": "Reloj en pausa",
+      "turnLabel": "Tiempo restante de este turno",
+      "placementLabel": "Tiempo restante para colocar la flota"
+    },
+    "resign": {
+      "action": "Rendirse",
+      "confirmQuestion": "¿Rendirte y perder esta partida?",
+      "confirm": "Sí, rendirse",
+      "cancel": "Seguir jugando"
+    },
+    "rating": {
+      "unrated": "Esta partida no ha puntuado.",
+      "provisional": "{played} de {total} partidas puntuadas — {remaining, plural, =1 {falta # para entrar en la clasificación} other {faltan # para entrar en la clasificación}}."
+    },
+    "reactions": {
+      "label": "Enviar una reacción",
+      "sentAnnounce": "Tu reacción: {emoji}",
+      "receivedAnnounce": "Reacción de tu rival: {emoji}",
+      "emoji": {
+        "applause": "Aplausos",
+        "surprise": "Sorpresa",
+        "laugh": "Risa",
+        "fire": "En racha",
+        "sob": "Llanto",
+        "salute": "Saludo"
+      }
+    }
+  },
+  "leaderboard": {
+    "title": "Clasificación",
+    "subtitle": "La clasificación mundial de Clásico. La puntuación usa Glicko-1, así que ganar a alguien más fuerte vale más que ganar a un igual.",
+    "tableCaption": "Jugadores clasificados, de mayor a menor puntuación",
+    "recordShort": "{wins}V · {losses}D",
+    "showing": "Se muestran {shown} de {total, plural, =1 {# persona clasificada} other {# personas clasificadas}}.",
+    "column": {
+      "rank": "#",
+      "player": "Jugador",
+      "rating": "Puntuación",
+      "record": "V/D",
+      "winRate": "% victorias",
+      "deviation": "Desviación"
+    },
+    "criteria": {
+      "title": "Cómo entrar en la clasificación",
+      "body": "Apareces cuando has jugado {games, plural, =1 {# partida puntuada} other {# partidas puntuadas}}, tu desviación está por debajo de {rd} y has terminado una partida puntuada en {days, plural, =1 {el último día} other {los últimos # días}}. Si paras más tiempo, desapareces de la clasificación: tu puntuación, tu perfil y tu historial quedan intactos, y una partida puntuada te devuelve."
+    },
+    "empty": {
+      "title": "Todavía no se ha clasificado nadie",
+      "body": "La clasificación se abre en cuanto alguien haya jugado {games, plural, =1 {# partida puntuada} other {# partidas puntuadas}} con una desviación por debajo de {rd}. Las partidas puntuadas son partidas rápidas entre personas registradas.",
+      "cta": "Jugar una partida puntuada"
+    },
+    "standing": {
+      "title": "Tu posición",
+      "rank": "N.º {rank}",
+      "unranked": "Sin clasificar",
+      "rating": "Puntuación",
+      "deviation": "Desviación",
+      "record": "V / D",
+      "winRate": "% victorias",
+      "unratedTitle": "Todavía no tienes puntuación",
+      "guestBody": "Juegas como invitado y las partidas de invitado no puntúan. Crea una cuenta para conseguir puntuación y un puesto en la clasificación.",
+      "signedOutBody": "Las partidas puntuadas son partidas rápidas entre personas registradas. Juega una para conseguir puntuación.",
+      "playRated": "Jugar una partida puntuada",
+      "viewProfile": "Ver tu perfil",
+      "progressLabel": "Progreso hacia la clasificación",
+      "gamesProgress": "{done} de {total} partidas puntuadas — {remaining, plural, =1 {falta #} other {faltan #}}.",
+      "excluded": {
+        "tooFewGames": "Todavía no estás en la clasificación: te faltan algunas partidas puntuadas.",
+        "uncertain": "Tu puntuación aún se está asentando. La clasificación exige una desviación por debajo de {threshold}; la tuya es de ±{rd}. Unas cuantas partidas puntuadas la bajarán.",
+        "inactive": "Has salido de la clasificación activa tras {days, plural, =1 {# día} other {# días}} sin partidas puntuadas. No has perdido nada: juega una y vuelves."
+      }
+    }
+  },
+  "profile": {
+    "title": "Perfil de jugador",
+    "subtitle": "Puntuación, balance y desviación.",
+    "backToBoard": "Volver a la clasificación",
+    "status": {
+      "rank": "Puesto n.º {rank}",
+      "unranked": "Sin clasificar",
+      "never_rated": "Todavía sin partidas puntuadas",
+      "too_few_games": "Provisional",
+      "rating_too_uncertain": "Provisional",
+      "inactive": "Inactivo"
+    },
+    "stat": {
+      "rating": "Puntuación",
+      "ratingHint": "Glicko-1, empieza en 1500",
+      "deviation": "Desviación",
+      "deviationHint": "Lo asentada que está la puntuación",
+      "deviationInflated": "Ha crecido desde ±{stored} durante la ausencia",
+      "record": "V / D",
+      "recordHint": "Solo partidas puntuadas",
+      "winRate": "% victorias",
+      "gamesRated": "{count, plural, =1 {# partida puntuada} other {# partidas puntuadas}}"
+    },
+    "notRanked": {
+      "title": "Fuera de la clasificación",
+      "tooFewGames": "Para clasificarse hacen falta {total} partidas puntuadas — {remaining, plural, =1 {queda # por jugar} other {quedan # por jugar}}.",
+      "uncertain": "La puntuación aún se está asentando: la clasificación exige una desviación por debajo de {threshold}.",
+      "inactive": "Ninguna partida puntuada en {days, plural, =1 {el último día} other {los últimos # días}}. La puntuación y el historial siguen intactos; una partida puntuada recupera el puesto."
+    },
+    "history": {
+      "title": "Historial de partidas",
+      "privateNote": "Solo tú puedes verlo",
+      "private": "El historial de partidas es privado de cada persona.",
+      "empty": "Todavía no hay partidas terminadas.",
+      "win": "V",
+      "loss": "D",
+      "versus": "contra {opponent}",
+      "unknownOpponent": "Antiguo jugador",
+      "rated": "Puntuada",
+      "unrated": "Sin puntuar",
+      "moves": "{count, plural, =1 {# jugada} other {# jugadas}}",
+      "bot": {
+        "easy": "Bot (fácil)",
+        "medium": "Bot (medio)",
+        "hard": "Bot (difícil)"
+      },
+      "reason": {
+        "sunk_all": "Flota hundida",
+        "forfeit": "Rendición",
+        "timeout": "Tiempo agotado",
+        "disconnect": "Desconexión"
+      }
+    }
+  },
+  "account": {
+    "title": "Tu cuenta",
+    "lead": "Conserva tu puntuación, tu historial de partidas y tu puesto en la clasificación. Correo y contraseña: nada más, y no te escribiremos.",
+    "signIn": "Iniciar sesión",
+    "signOut": "Cerrar sesión",
+    "createAccount": "Crear cuenta",
+    "displayName": "Nombre visible",
+    "displayNameHint": "De {min} a {max} caracteres: letras, números y guiones bajos. Es el nombre que ven los demás.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "passwordHint": "Al menos {min} caracteres.",
+    "working": "Un momento…",
+    "signInNote": "Al iniciar sesión se sustituye el invitado con el que estás jugando ahora.",
+    "signUpNote": "Todo lo que hayas jugado como invitado se conserva.",
+    "errors": {
+      "emailTaken": "Ya hay una cuenta con ese correo. Prueba a iniciar sesión.",
+      "badCredentials": "Ese correo y esa contraseña no coinciden con ninguna cuenta.",
+      "passwordTooShort": "Esa contraseña es demasiado corta.",
+      "unknown": "Algo ha salido mal. Inténtalo de nuevo.",
+      "name": {
+        "too_short": "Ese nombre es demasiado corto.",
+        "too_long": "Ese nombre es demasiado largo.",
+        "invalid_characters": "Solo letras, números y guiones bajos.",
+        "reserved": "Ese nombre está reservado. Elige otro.",
+        "taken": "Ese nombre ya está cogido. Elige otro."
+      }
+    },
+    "upsell": {
+      "body": "Juegas como invitado, así que esta partida no ha puntuado y no se guardará.",
+      "cta": "Crea una cuenta para conservarla"
+    }
   }
 }

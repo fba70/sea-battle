@@ -268,7 +268,18 @@ test.describe('a quick match carried to a finish @core @queue', () => {
     const two = await newPlayer(secondContext);
 
     await startQuickMatch(one.page, two.page);
-    await playToTheEnd(one.page, two.page);
+
+    /**
+     * Finished by resignation rather than played out.
+     *
+     * What this test is about is everything *after* a finish — the reload, the
+     * button, the fresh match — and any genuine ending exercises that equally.
+     * The rated test below plays a match shot by shot; doing it twice in one
+     * serial file made the suite minutes slower and load-sensitive enough to
+     * time out, for no extra coverage.
+     */
+    await two.page.getByRole('button', { name: /^resign$/i }).click();
+    await two.page.getByRole('button', { name: /yes, resign/i }).click();
 
     // Both see a result.
     await expect(one.page.getByText(/victory|defeated/i).first()).toBeVisible({ timeout: 20_000 });

@@ -16,10 +16,15 @@ import { defineRouting } from 'next-intl/routing';
  *   must stand on their own — German ship genders differ (das Schlachtschiff, der
  *   Kreuzer, der Zerstörer, das U-Boot), so no string may place an article or
  *   possessive before an interpolated {ship}. Twenty corrections were applied.
- * - **es / it / fr** — intentionally partial; missing keys fall back to English
- *   per §7.14. Filling them in is Phase 1 (§13).
+ * - **es / it / fr** — complete, and **unreviewed drafts**. Spec §7.14 asks for a
+ *   human review before a locale is called finished, and that has not happened:
+ *   these were written in-project, not by native speakers. Treat wording as
+ *   provisional and correct it freely; the keys and ICU arguments are pinned by
+ *   `placeholders.test.ts`, so a rewrite cannot quietly break a placeholder.
  *
- * Any new German string must honour the conventions above.
+ * Any new German string must honour the conventions above. A new English string
+ * may ship before the other four catch up — §7.14 allows a partial locale, and
+ * anything missing falls back to English.
  */
 export const locales = ['en', 'de', 'es', 'it', 'fr'] as const;
 

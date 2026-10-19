@@ -73,9 +73,43 @@ describe('ICU pluralisation', () => {
     expect(t('game.shipsRemaining', { count: 3 })).toBe('3 Schiffe übrig');
   });
 
-  it('falls back to English for a namespace a locale has not translated yet', () => {
-    // fr has no `game` namespace on purpose — this is the §7.14 fallback guarantee.
-    expect(resolved('fr')('game.shipsRemaining', { count: 2 })).toBe('2 ships remaining');
-    expect(resolved('fr')('landing.title')).toBe('Coulez la flotte.');
+  it('applies French plural rules, where zero and one are both singular', () => {
+    const t = resolved('fr');
+
+    expect(t('game.shipsRemaining', { count: 0 })).toBe('Plus aucun navire');
+    expect(t('game.shipsRemaining', { count: 1 })).toBe('1 navire restant');
+    expect(t('game.shipsRemaining', { count: 3 })).toBe('3 navires restants');
+  });
+
+  it('applies Spanish and Italian plural rules', () => {
+    expect(resolved('es')('game.shipsRemaining', { count: 1 })).toBe('Queda 1 barco');
+    expect(resolved('es')('game.shipsRemaining', { count: 3 })).toBe('Quedan 3 barcos');
+    expect(resolved('it')('game.shipsRemaining', { count: 1 })).toBe('1 nave rimasta');
+    expect(resolved('it')('game.shipsRemaining', { count: 3 })).toBe('3 navi rimaste');
+  });
+});
+
+describe('English fallback (spec §7.14)', () => {
+  /**
+   * All five catalogs are complete today, so the guarantee is tested against a
+   * deliberately incomplete one rather than against whichever locale happens to
+   * be lagging. That is what a newly added key looks like before it is
+   * translated, and it must render in English rather than as a raw key.
+   */
+  const partial = { landing: { title: 'Coulez la flotte.' } } as unknown as MessageTree;
+
+  it('uses the English text for anything a locale is missing', () => {
+    const merged = mergeWithFallback(catalogs.en, partial) as unknown as EnglishMessages;
+    const t = createTranslator({ locale: 'fr', messages: merged });
+
+    expect(t('game.shipsRemaining', { count: 2 })).toBe('2 ships remaining');
+    expect(t('account.signIn')).toBe('Sign in');
+  });
+
+  it('keeps whatever the locale does translate', () => {
+    const merged = mergeWithFallback(catalogs.en, partial) as unknown as EnglishMessages;
+    const t = createTranslator({ locale: 'fr', messages: merged });
+
+    expect(t('landing.title')).toBe('Coulez la flotte.');
   });
 });

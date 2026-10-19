@@ -207,8 +207,8 @@
     "intro": "Kurze Antworten dazu, was SeaDuel heute kann.",
     "items": {
       "registration": {
-        "q": "Muss ich mich registrieren?",
-        "a": "Nein. Es gibt überhaupt keine Anmeldung — Seite öffnen und spielen. Konten sind für eine spätere Ausbaustufe geplant, damit Ergebnisse erhalten bleiben; heute ist nichts davon abhängig."
+        "q": "Brauche ich ein Konto?",
+        "a": "Nein. Seite öffnen und spielen — gegen den Bot oder gegen eine andere Person. Ein Konto ist freiwillig: Es behält deine Wertung, deinen Ranglistenplatz und deine beendeten Partien. Nötig sind nur E-Mail und Passwort, und wir schreiben dir nie. Ein Passwort-Zurücksetzen gibt es noch nicht — bewahre es also gut auf."
       },
       "free": {
         "q": "Ist es kostenlos?",
@@ -216,23 +216,23 @@
       },
       "bot": {
         "q": "Gegen wen spiele ich?",
-        "a": "Gegen einen Computergegner in den Stufen Leicht, Mittel oder Schwer. Der Bot spielt nach genau denselben Regeln wie du und sieht von deinem Spielfeld nur das, was du auch sehen würdest — deine Schiffspositionen kann er nicht einsehen."
+        "a": "Gegen wen du willst. Der Bot spielt auf Leicht, Mittel oder Schwer, hält sich an genau dieselben Regeln wie du und sieht von deinem Spielfeld nur das, was du auch sehen würdest — er kann deine Schiffspositionen nicht einsehen. Du kannst auch online gegen eine andere Person spielen. Partien gegen den Bot werden nie gewertet."
       },
       "friend": {
         "q": "Kann ich gegen Freunde spielen?",
-        "a": "Noch nicht. Derzeit ist SeaDuel ein Einzelspieler-Spiel gegen den Bot. Das Spiel gegen andere Personen ist geplant, aber noch nicht umgesetzt."
+        "a": "Ja. Erstelle einen privaten Raum und teile den Code oder den Link — keine Seite braucht dafür ein Konto. Wenn du lieber gegen Unbekannte spielst, findet die Schnellpartie die nächste wartende Person."
       },
       "mobile": {
         "q": "Funktioniert das auf dem Handy?",
         "a": "Ja. SeaDuel läuft im Browser auf Handys, Tablets und Desktop-Rechnern, und es muss nichts installiert werden. Auf dem Touchscreen ziehst du ein Schiff auf das Raster oder tippst es an, um es zu platzieren, und tippst auf ein Feld, um zu schießen."
       },
       "rating": {
-        "q": "Gibt es eine Wertung oder eine Bestenliste?",
-        "a": "Noch nicht. Spiele gegen den Bot dienen nur der Übung und werden weder gewertet noch in eine Rangliste aufgenommen."
+        "q": "Gibt es eine Wertung oder eine Rangliste?",
+        "a": "Ja. Gewertet werden Schnellpartien zwischen zwei registrierten Personen, und nach jeder bewegt sich deine Wertung. Partien gegen den Bot, in privaten Räumen oder als Gast werden nie gewertet. In der Rangliste erscheinst du, sobald du {games} gewertete Partien gespielt hast, deine Wertung sich unter eine Abweichung von {rd} eingependelt hat und deine letzte gewertete Partie höchstens {days} Tage her ist."
       },
       "data": {
-        "q": "Was wird über mich gespeichert?",
-        "a": "Da es keine Konten gibt, gibt es auch kein Profil, das angelegt oder gelöscht werden müsste. Dein Browser merkt sich lokal zwei Dinge: die gewählte Sprache und ob der Ton stummgeschaltet ist. Wenn du die Browserdaten löschst, verschwindet beides."
+        "q": "Was speichert ihr über mich?",
+        "a": "Ohne Konto: Dein Browser merkt sich deine Sprache und ob der Ton stummgeschaltet ist, und der Server legt eine vorübergehende Gast-Identität an, damit Online-Partien funktionieren. Mit Konto: deine E-Mail, dein Passwort (verschlüsselt, nie lesbar), dein Anzeigename, deine Wertung und deine beendeten Partien. Keine Werbung und keine Tracker von Dritten. Ein Konto selbst zu löschen ist noch nicht möglich."
       }
     },
     "cta": "Gegen den Bot spielen",

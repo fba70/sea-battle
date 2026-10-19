@@ -1,20 +1,500 @@
 {
   "app": {
     "name": "SeaDuel",
-    "tagline": "Bataille navale moderne. Sans inscription, sans publicité, sans paywall."
+    "tagline": "La bataille navale moderne. Sans inscription, sans publicité, sans péage."
   },
   "nav": {
     "play": "Jouer",
     "howToPlay": "Comment jouer",
-    "faq": "FAQ",
-    "support": "Soutenir le projet"
+    "faq": "Questions fréquentes",
+    "support": "Soutenir le projet",
+    "label": "Principale",
+    "footerLabel": "Pied de page",
+    "leaderboard": "Classement"
   },
   "landing": {
     "title": "Coulez la flotte.",
-    "subtitle": "Tirez votre premier coup en quelques secondes, sans compte."
+    "subtitle": "Placez votre flotte, prenez le bot de vitesse et coulez les dix navires.",
+    "playVsBot": "Jouer contre le bot",
+    "playOnline": "Jouer en ligne",
+    "facts": {
+      "board": "Grille 10 x 10, dix navires",
+      "rules": "Règles classiques : un coup au but rejoue",
+      "bots": "Trois niveaux de bot"
+    }
+  },
+  "game": {
+    "title": "Partie contre le bot",
+    "loading": "Préparation du champ de bataille…",
+    "keyboardHint": "Les flèches déplacent le curseur, Entrée ou Espace tirent. Appuyez sur R pendant le placement pour pivoter.",
+    "yourTurn": "À vous",
+    "opponentTurn": "Tour de l'adversaire",
+    "shipsRemaining": "{count, plural, =0 {Plus aucun navire} one {# navire restant} other {# navires restants}}",
+    "shotsFired": "{count, plural, =0 {Aucun tir} one {# tir} other {# tirs}}",
+    "difficulty": {
+      "label": "Difficulté du bot",
+      "easy": "Facile",
+      "medium": "Moyen",
+      "hard": "Difficile",
+      "easyHint": "Tire au hasard. Un échauffement tranquille.",
+      "mediumHint": "Cherche selon un motif et achève tout navire qu'il touche.",
+      "hardHint": "Déduit où vos navires doivent se trouver. Vraiment coriace.",
+      "playingAgainst": "Vous jouez contre {level}"
+    },
+    "ship": {
+      "battleship": "Cuirassé",
+      "cruiser": "Croiseur",
+      "destroyer": "Torpilleur",
+      "submarine": "Sous-marin"
+    },
+    "board": {
+      "yourFleet": "Votre flotte",
+      "enemyWaters": "Eaux ennemies",
+      "placementGrid": "Votre flotte : placez vos navires",
+      "yourGrid": "Votre flotte sous le feu",
+      "enemyGrid": "Eaux ennemies : choisissez une cible"
+    },
+    "placement": {
+      "fleetTray": "Navires à placer",
+      "deckCount": "{count, plural, one {# case} other {# cases}}",
+      "instructions": "Faites glisser un navire sur la grille, ou sélectionnez-le et touchez une case. Touchez un navire déjà placé pour le déplacer. Les navires ne peuvent pas se toucher, même en diagonale.",
+      "rotate": "Pivoter (R)",
+      "autoPlace": "Placement automatique",
+      "reset": "Vider la grille",
+      "start": "Commencer la bataille",
+      "incomplete": "Placez les dix navires",
+      "done": "Placé"
+    },
+    "status": {
+      "placement": "Placez votre flotte pour commencer",
+      "yours": "À vous : tirez",
+      "opponent": "L'adversaire vise…",
+      "won": "Victoire ! Flotte ennemie détruite",
+      "lost": "Défaite : votre flotte est perdue"
+    },
+    "result": {
+      "wonBody": "Vous avez coulé tous les navires ennemis. On rejoue ?",
+      "lostBody": "Le bot a coulé votre flotte le premier. Vous réessayez ?",
+      "wonTitle": "Victoire",
+      "lostTitle": "Défaite"
+    },
+    "action": {
+      "playAgain": "Rejouer",
+      "backHome": "Retour à l'accueil"
+    },
+    "stats": {
+      "enemyShips": "Restants côté ennemi",
+      "yourShips": "Vos navires restants",
+      "shotsFired": "Tirs",
+      "hits": "Touchés",
+      "accuracy": "Précision"
+    },
+    "log": {
+      "title": "Derniers tirs",
+      "empty": "Aucun tir pour l'instant.",
+      "human": "Vous",
+      "bot": "Bot",
+      "hit": "Touché",
+      "miss": "À l'eau",
+      "sunk": "A coulé le {ship}"
+    },
+    "cell": {
+      "state": "{cell}, {state}",
+      "fireAt": "{cell}, {state}. Tirez ici.",
+      "unknown": "inexplorée",
+      "water": "eau",
+      "empty": "eau libre",
+      "ship": "votre navire",
+      "hit": "touché",
+      "sunk": "coulé",
+      "miss": "à l'eau",
+      "knownEmpty": "vide confirmée"
+    },
+    "placed": "{placed} navires sur {total} placés",
+    "shipsLeftShort": "{count} restants",
+    "allPlaced": "Flotte prête",
+    "thinking": "Réflexion",
+    "announce": {
+      "youHit": "Votre tir en {cell} a touché.",
+      "youMiss": "Votre tir en {cell} est tombé à l'eau.",
+      "youSunk": "Votre tir en {cell} a coulé le {ship}.",
+      "botHit": "Le bot a touché votre flotte en {cell}.",
+      "botMiss": "Le bot a manqué en {cell}.",
+      "botSunk": "Le bot a coulé votre {ship} en {cell}."
+    },
+    "summary": {
+      "title": "Bilan final"
+    },
+    "sound": {
+      "mute": "Couper le son",
+      "unmute": "Rétablir le son"
+    },
+    "help": "Comment jouer"
   },
   "locale": {
     "label": "Langue",
     "switcher": "Changer de langue"
+  },
+  "howToPlay": {
+    "title": "Comment jouer",
+    "intro": "La bataille navale est un duel de déduction. Les deux flottes sont cachées et vous découvrez les navires ennemis tir après tir. Si vous n'avez pas joué depuis des années, ces quatre étapes résument tout le jeu.",
+    "goal": {
+      "title": "L'objectif",
+      "body": "Couler les dix navires ennemis avant que l'adversaire ne coule les vôtres. Vous ne voyez jamais où se trouve sa flotte : seulement ce que vos tirs révèlent."
+    },
+    "place": {
+      "title": "Placez votre flotte",
+      "board": "La grille fait 10 x 10, avec les colonnes de A à J et les lignes de 1 à 10. Vous placez dix navires occupant vingt cases au total :",
+      "fleet": {
+        "four": "1 cuirassé de 4 cases",
+        "three": "2 croiseurs de 3 cases",
+        "two": "3 torpilleurs de 2 cases",
+        "one": "4 sous-marins d'1 case"
+      },
+      "orientation": "Chaque navire occupe une ligne droite, horizontale ou verticale — jamais en diagonale — et doit tenir entièrement sur la grille. Faites glisser un navire sur la grille, ou sélectionnez-le et touchez une case. Appuyez sur R ou utilisez le bouton Pivoter pour passer de l'horizontale à la verticale. Le placement automatique remplit la grille à votre place.",
+      "fleetDiagram": "Les dix navires d'une flotte : un de quatre cases, deux de trois cases, trois de deux cases et quatre d'une seule case."
+    },
+    "touching": {
+      "title": "Espacez vos navires",
+      "body": "Les navires ne peuvent pas se toucher. Il faut au moins une case libre entre deux navires.",
+      "diagonals": "Les coins comptent aussi : deux navires qui ne se rejoignent qu'en diagonale se touchent quand même, et le placement est refusé.",
+      "help": "Vous n'avez pas à compter les cases vous-même. L'aperçu devient rouge et la grille tremble lorsqu'une position est interdite : vous ne pouvez donc placer qu'une flotte valide.",
+      "legalDiagram": "Deux navires séparés par une ligne libre : un placement valide.",
+      "illegalDiagram": "Deux navires qui se rejoignent par un coin : refusé, car le contact en diagonale compte aussi.",
+      "allowed": "Autorisé",
+      "notAllowed": "Interdit"
+    },
+    "fire": {
+      "title": "Tirez chacun votre tour",
+      "turns": "Vous tirez en premier. À votre tour, vous choisissez une case de la grille ennemie et tirez un seul coup. Un tir tombe à l'eau, touche, ou touche et coule un navire.",
+      "againLead": "Un coup au but vous donne un tir de plus.",
+      "again": "Continuez à tirer tant que vous touchez. Le tour ne passe à l'adversaire que lorsque vous manquez.",
+      "noRepeat": "Vous ne pouvez pas tirer deux fois sur la même case : celles déjà résolues ne sont plus sélectionnables.",
+      "outcomesDiagram": "Marques de la grille de tir : un anneau creux pour un coup à l'eau, un éclat orange pour un coup au but et un bloc rouge barré pour un morceau de navire coulé."
+    },
+    "sink": {
+      "title": "Coulez la flotte",
+      "body": "Quand toutes les cases d'un navire ont été touchées, le navire coule et sa silhouette complète est révélée.",
+      "buffer": "Comme les navires ne peuvent jamais se toucher, toutes les cases autour d'un navire coulé sont forcément vides. Elles sont marquées automatiquement par de petits points et vous ne pouvez pas y gaspiller un tir.",
+      "win": "Le premier à couler les dix navires de l'adversaire gagne immédiatement.",
+      "bufferDiagram": "Un navire coulé de deux cases entouré de points marquant les cases désormais connues comme vides."
+    },
+    "bots": {
+      "title": "Les trois bots",
+      "easy": {
+        "name": "Facile",
+        "body": "Tire sur des cases au hasard. Un échauffement détendu, le temps de prendre vos marques."
+      },
+      "medium": {
+        "name": "Moyen",
+        "body": "Cherche selon un motif et, dès qu'il touche, suit le navire jusqu'à le couler."
+      },
+      "hard": {
+        "name": "Difficile",
+        "body": "Calcule quelles cases vos navires restants peuvent encore occuper et tire là où un navire est le plus probable. Un adversaire vraiment coriace."
+      }
+    },
+    "salvo": {
+      "title": "Mode salve",
+      "badge": "Pas encore disponible",
+      "body": "Une variante plus rapide est prévue : au lieu d'un tir par tour, vous tirez une salve comptant autant de coups que de navires survivants, en choisissant toutes les cibles avant d'en résoudre une seule. Le tour passe ensuite systématiquement : en mode salve, un coup au but ne redonne pas la main. Aujourd'hui SeaDuel applique les règles classiques décrites ci-dessus."
+    },
+    "cta": "Jouer contre le bot",
+    "faqLink": "Lire les questions fréquentes"
+  },
+  "faq": {
+    "title": "Questions fréquentes",
+    "intro": "Des réponses courtes sur ce que SeaDuel fait aujourd'hui.",
+    "items": {
+      "registration": {
+        "q": "Ai-je besoin d'un compte ?",
+        "a": "Non. Ouvrez la page et jouez : contre le bot ou contre quelqu'un d'autre. Le compte est facultatif et sert à conserver votre score, votre place au classement et vos parties terminées. Il ne demande qu'un e-mail et un mot de passe, et nous ne vous écrirons jamais. La réinitialisation du mot de passe n'existe pas encore : gardez-le en lieu sûr."
+      },
+      "free": {
+        "q": "Est-ce gratuit ?",
+        "a": "Oui. SeaDuel est gratuit, sans publicité, et aucune fonctionnalité n'est réservée aux personnes qui paient."
+      },
+      "bot": {
+        "q": "Contre qui est-ce que je joue ?",
+        "a": "Contre qui vous voulez. Le bot joue en Facile, Moyen ou Difficile, suit exactement les mêmes règles que vous et ne voit de votre grille que ce que vous en verriez : il ne peut pas regarder où sont vos navires. Vous pouvez aussi jouer en ligne contre une autre personne. Les parties contre le bot ne sont jamais classées."
+      },
+      "friend": {
+        "q": "Puis-je jouer contre un ami ?",
+        "a": "Oui. Créez un salon privé et partagez le code ou le lien : aucun compte n'est nécessaire, ni pour vous ni pour l'autre. Et si vous préférez affronter un inconnu, la partie rapide vous associe à la personne qui attend."
+      },
+      "mobile": {
+        "q": "Est-ce que ça marche sur mon téléphone ?",
+        "a": "Oui. SeaDuel fonctionne dans le navigateur sur téléphone, tablette et ordinateur, et il n'y a rien à installer. Sur un écran tactile, faites glisser un navire sur la grille ou touchez pour le placer, et touchez une case pour tirer."
+      },
+      "rating": {
+        "q": "Y a-t-il un classement ou un score ?",
+        "a": "Oui. Sont classées les parties rapides entre deux personnes inscrites, et votre score évolue après chacune d'elles. Les parties contre le bot, en salon privé ou en invité ne sont jamais classées. Vous apparaissez au classement dès que vous avez joué {games} parties classées, que votre score s'est stabilisé sous un écart de {rd} et que vous avez terminé une partie classée au cours des {days} derniers jours."
+      },
+      "data": {
+        "q": "Que conservez-vous à mon sujet ?",
+        "a": "Sans compte : votre navigateur retient votre langue et si le son est coupé, et le serveur crée une identité d'invité temporaire pour que les parties en ligne fonctionnent. Avec un compte : votre e-mail, votre mot de passe (chiffré, jamais lisible), votre nom affiché, votre score et vos parties terminées. Aucune publicité et aucun traceur tiers. Supprimer son compte soi-même n'est pas encore possible."
+      }
+    },
+    "cta": "Jouer contre le bot",
+    "rulesLink": "Lire comment jouer"
+  },
+  "multiplayer": {
+    "hub": {
+      "title": "Jouer en ligne",
+      "subtitle": "Affrontez quelqu'un en temps réel. Votre flotte reste cachée : c'est le serveur qui arbitre.",
+      "quick": "Partie rapide",
+      "quickHint": "Nous vous associons à quelqu'un qui attend. Rien à configurer.",
+      "quickAction": "Chercher un adversaire",
+      "room": "Partie privée",
+      "roomHint": "Créez un salon et partagez le code ou le lien avec quelqu'un que vous connaissez.",
+      "roomAction": "Créer un salon ou en rejoindre un",
+      "note": "Les parties en invité ne sont pas classées. Dans les deux cas, on commence par placer la flotte dès l'arrivée de l'adversaire."
+    },
+    "room": {
+      "title": "Salon privé",
+      "create": "Créer un salon",
+      "creating": "Création du salon…",
+      "joinTitle": "Rejoindre avec un code",
+      "codeInput": "Code du salon",
+      "codePlaceholder": "BCDF23",
+      "join": "Rejoindre",
+      "joining": "Connexion au salon…",
+      "codeLabel": "Code du salon :",
+      "share": "Partagez ce lien avec la personne de votre choix :",
+      "copy": "Copier le lien",
+      "copied": "Copié",
+      "waiting": "En attente de l'autre personne…",
+      "errors": {
+        "invalid_code": "Ce code ne semble pas correct.",
+        "room_not_found": "Aucun salon avec ce code.",
+        "room_full": "Ce salon compte déjà deux joueurs.",
+        "already_finished": "Cette partie est déjà terminée.",
+        "not_signed_in": "Votre session a expiré. Rechargez la page et réessayez.",
+        "unknown": "Quelque chose s'est mal passé. Réessayez."
+      },
+      "waitingTitle": "Salon ouvert",
+      "shareHint": "Envoyez le lien ou dictez le code. La partie commence dès son arrivée.",
+      "backToMenu": "Retour au menu de jeu",
+      "lead": "Jouez avec quelqu'un que vous connaissez. Créez un salon et partagez le code ou le lien : aucun compte nécessaire.",
+      "createHint": "Vous recevez un code de 6 caractères et un lien à partager.",
+      "or": "ou"
+    },
+    "quick": {
+      "title": "Partie rapide",
+      "start": "Chercher un adversaire",
+      "searching": "Recherche d'un adversaire…",
+      "cancel": "Annuler",
+      "poolRated": "Vous êtes en file pour une partie classée.",
+      "poolUnrated": "Vous êtes en file pour une partie non classée. Inscrivez-vous pour jouer des parties classées.",
+      "matched": "Adversaire trouvé : la partie commence.",
+      "searchingTitle": "Exploration des eaux",
+      "searchingHint": "Vous serez associé à la prochaine personne qui cherche une partie.",
+      "idleTitle": "Partie rapide",
+      "idleHint": "Nous vous trouvons un adversaire : pas de code, pas d'invitation, rien à préparer.",
+      "backToMenu": "Retour au menu de jeu"
+    },
+    "live": {
+      "title": "Partie en direct",
+      "connecting": "Connexion…",
+      "connected": "Connecté",
+      "reconnecting": "Reconnexion…",
+      "failed": "Connexion impossible. Rechargez pour réessayer.",
+      "waitingForOpponent": "En attente de votre adversaire…",
+      "waitingHint": "La partie commence dès que vous êtes connectés tous les deux.",
+      "confirmFleet": "Confirmer la flotte",
+      "waitingForFleet": "Flotte confirmée. En attente du placement de votre adversaire…",
+      "rejected": "Le serveur a refusé : {reason}.",
+      "dismiss": "Fermer",
+      "failedTitle": "Connexion perdue",
+      "fleetReadyTitle": "Flotte en position",
+      "result": {
+        "wonBody": "Vous avez coulé tous les navires ennemis.",
+        "lostBody": "Votre adversaire a coulé votre flotte le premier.",
+        "again": "Nouvelle partie",
+        "lobby": "Retour au menu de jeu",
+        "abandonedTitle": "Personne n'a terminé",
+        "abandonedBody": "Vous avez quitté la partie tous les deux : il n'y a donc pas de résultat. Rien n'a été classé.",
+        "ended": {
+          "sunk_all": {
+            "won": "Vous avez coulé son dernier navire.",
+            "lost": "Votre dernier navire a été coulé."
+          },
+          "forfeit": {
+            "won": "Votre adversaire a abandonné.",
+            "lost": "Vous avez abandonné."
+          },
+          "timeout": {
+            "won": "Votre adversaire a manqué de temps.",
+            "lost": "Vous avez manqué de temps trop souvent."
+          },
+          "disconnect": {
+            "won": "Votre adversaire n'est pas revenu à temps.",
+            "lost": "Vous n'êtes pas revenu à temps."
+          }
+        }
+      },
+      "opponentAway": "Votre adversaire a perdu la connexion. Il lui reste <time></time> pour revenir.",
+      "missedTurns": "Vous avez manqué {missed} tours sur {max}. À {max} tours manqués, la partie est perdue au temps."
+    },
+    "clock": {
+      "seconds": "{seconds} s",
+      "paused": "Horloge en pause",
+      "turnLabel": "Temps restant pour ce tour",
+      "placementLabel": "Temps restant pour placer la flotte"
+    },
+    "resign": {
+      "action": "Abandonner",
+      "confirmQuestion": "Abandonner et perdre cette partie ?",
+      "confirm": "Oui, abandonner",
+      "cancel": "Continuer à jouer"
+    },
+    "rating": {
+      "unrated": "Cette partie n'était pas classée.",
+      "provisional": "{played} parties classées sur {total} — {remaining, plural, one {encore # avant d'être classé} other {encore # avant d'être classé}}."
+    },
+    "reactions": {
+      "label": "Envoyer une réaction",
+      "sentAnnounce": "Votre réaction : {emoji}",
+      "receivedAnnounce": "Réaction de votre adversaire : {emoji}",
+      "emoji": {
+        "applause": "Applaudissements",
+        "surprise": "Surprise",
+        "laugh": "Rire",
+        "fire": "En feu",
+        "sob": "Larmes",
+        "salute": "Salut"
+      }
+    }
+  },
+  "leaderboard": {
+    "title": "Classement",
+    "subtitle": "Le classement mondial en mode Classique. Le score utilise Glicko-1 : battre plus fort que soi rapporte davantage que battre son égal.",
+    "tableCaption": "Joueurs classés, du meilleur score au moins bon",
+    "recordShort": "{wins}V · {losses}D",
+    "showing": "Affichage de {shown} sur {total, plural, one {# personne classée} other {# personnes classées}}.",
+    "column": {
+      "rank": "#",
+      "player": "Joueur",
+      "rating": "Score",
+      "record": "V/D",
+      "winRate": "% de victoires",
+      "deviation": "Écart"
+    },
+    "criteria": {
+      "title": "Comment être classé",
+      "body": "Vous apparaissez dès que vous avez joué {games, plural, one {# partie classée} other {# parties classées}}, que votre écart est inférieur à {rd} et que vous avez terminé une partie classée {days, plural, one {dans la dernière journée} other {au cours des # derniers jours}}. Au-delà, vous sortez du classement : votre score, votre profil et votre historique restent intacts, et une partie classée vous y ramène."
+    },
+    "empty": {
+      "title": "Personne ne s'est encore qualifié",
+      "body": "Le classement s'ouvre dès que quelqu'un aura joué {games, plural, one {# partie classée} other {# parties classées}} avec un écart inférieur à {rd}. Les parties classées sont des parties rapides entre personnes inscrites.",
+      "cta": "Jouer une partie classée"
+    },
+    "standing": {
+      "title": "Votre position",
+      "rank": "N° {rank}",
+      "unranked": "Non classé",
+      "rating": "Score",
+      "deviation": "Écart",
+      "record": "V / D",
+      "winRate": "% de victoires",
+      "unratedTitle": "Vous n'avez pas encore de score",
+      "guestBody": "Vous jouez en invité, et les parties en invité ne sont pas classées. Créez un compte pour obtenir un score et une place au classement.",
+      "signedOutBody": "Les parties classées sont des parties rapides entre personnes inscrites. Jouez-en une pour obtenir un score.",
+      "playRated": "Jouer une partie classée",
+      "viewProfile": "Voir votre profil",
+      "progressLabel": "Progression vers la qualification",
+      "gamesProgress": "{done} parties classées sur {total} — {remaining, plural, one {encore #} other {encore #}}.",
+      "excluded": {
+        "tooFewGames": "Vous n'êtes pas encore au classement : il vous manque quelques parties classées.",
+        "uncertain": "Votre score se stabilise encore. Le classement exige un écart inférieur à {threshold} ; le vôtre est de ±{rd}. Quelques parties classées le feront baisser.",
+        "inactive": "Vous êtes sorti du classement actif après {days, plural, one {# jour} other {# jours}} sans partie classée. Rien n'est perdu : jouez-en une et vous y revenez."
+      }
+    }
+  },
+  "profile": {
+    "title": "Profil du joueur",
+    "subtitle": "Score, bilan et écart de score.",
+    "backToBoard": "Retour au classement",
+    "status": {
+      "rank": "Place n° {rank}",
+      "unranked": "Non classé",
+      "never_rated": "Aucune partie classée pour l'instant",
+      "too_few_games": "Provisoire",
+      "rating_too_uncertain": "Provisoire",
+      "inactive": "Inactif"
+    },
+    "stat": {
+      "rating": "Score",
+      "ratingHint": "Glicko-1, départ à 1500",
+      "deviation": "Écart",
+      "deviationHint": "À quel point le score est stabilisé",
+      "deviationInflated": "Passé de ±{stored} pendant l'absence",
+      "record": "V / D",
+      "recordHint": "Parties classées uniquement",
+      "winRate": "% de victoires",
+      "gamesRated": "{count, plural, one {# partie classée} other {# parties classées}}"
+    },
+    "notRanked": {
+      "title": "Hors classement",
+      "tooFewGames": "La qualification demande {total} parties classées — {remaining, plural, one {encore # à jouer} other {encore # à jouer}}.",
+      "uncertain": "Le score se stabilise encore : le classement exige un écart inférieur à {threshold}.",
+      "inactive": "Aucune partie classée {days, plural, one {dans la dernière journée} other {au cours des # derniers jours}}. Le score et l'historique restent intacts ; une partie classée rend la place."
+    },
+    "history": {
+      "title": "Historique des parties",
+      "privateNote": "Visible par vous seul",
+      "private": "L'historique des parties reste privé.",
+      "empty": "Aucune partie terminée pour l'instant.",
+      "win": "V",
+      "loss": "D",
+      "versus": "contre {opponent}",
+      "unknownOpponent": "Ancien joueur",
+      "rated": "Classée",
+      "unrated": "Non classée",
+      "moves": "{count, plural, one {# coup} other {# coups}}",
+      "bot": {
+        "easy": "Bot (facile)",
+        "medium": "Bot (moyen)",
+        "hard": "Bot (difficile)"
+      },
+      "reason": {
+        "sunk_all": "Flotte coulée",
+        "forfeit": "Abandon",
+        "timeout": "Temps écoulé",
+        "disconnect": "Déconnexion"
+      }
+    }
+  },
+  "account": {
+    "title": "Votre compte",
+    "lead": "Conservez votre score, votre historique de parties et votre place au classement. Un e-mail et un mot de passe : rien d'autre, et aucun courrier de notre part.",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "createAccount": "Créer un compte",
+    "displayName": "Nom affiché",
+    "displayNameHint": "De {min} à {max} caractères : lettres, chiffres et tirets bas. C'est le nom que voient les autres.",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "passwordHint": "Au moins {min} caractères.",
+    "working": "Un instant…",
+    "signInNote": "La connexion remplace l'invité avec lequel vous jouez actuellement.",
+    "signUpNote": "Tout ce que vous avez joué en invité vous suit.",
+    "errors": {
+      "emailTaken": "Un compte existe déjà avec cet e-mail. Essayez plutôt de vous connecter.",
+      "badCredentials": "Cet e-mail et ce mot de passe ne correspondent à aucun compte.",
+      "passwordTooShort": "Ce mot de passe est trop court.",
+      "unknown": "Quelque chose s'est mal passé. Réessayez.",
+      "name": {
+        "too_short": "Ce nom est trop court.",
+        "too_long": "Ce nom est trop long.",
+        "invalid_characters": "Lettres, chiffres et tirets bas uniquement.",
+        "reserved": "Ce nom est réservé. Choisissez-en un autre.",
+        "taken": "Ce nom est déjà pris. Choisissez-en un autre."
+      }
+    },
+    "upsell": {
+      "body": "Vous jouez en invité : cette partie n'a pas été classée et ne sera pas conservée.",
+      "cta": "Créez un compte pour la conserver"
+    }
   }
 }

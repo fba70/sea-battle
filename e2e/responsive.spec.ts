@@ -29,7 +29,11 @@ test.describe('header survives text expansion at the 360px floor', () => {
       await page.goto(`/${locale}/faq`);
 
       const brand = await page.getByRole('link', { name: 'SeaDuel' }).boundingBox();
-      const nav = await page.getByRole('navigation', { name: /Main|Haupt/ }).boundingBox();
+      // The landmark's own name is translated too, so match all five rather than
+      // only the two this test started with.
+      const nav = await page
+        .getByRole('navigation', { name: /Main|Hauptmenü|Principal|Principale/ })
+        .boundingBox();
       const select = await page.getByRole('combobox').first().boundingBox();
       if (!brand || !nav || !select) throw new Error('header parts not laid out');
 

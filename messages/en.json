@@ -207,8 +207,8 @@
     "intro": "Short answers about what SeaDuel does today.",
     "items": {
       "registration": {
-        "q": "Do I need to register?",
-        "a": "No. There is no sign-up at all — open the page and play. Accounts are planned for a later stage so that results can be kept, but nothing is gated behind one today."
+        "q": "Do I need an account?",
+        "a": "No. Open the page and play — against the bot or against another person. An account is optional: it keeps your rating, your place on the leaderboard and your finished games. It needs only an email and a password, and we never send you email. There is no password reset yet, so keep your password somewhere safe."
       },
       "free": {
         "q": "Is it free?",
@@ -216,11 +216,11 @@
       },
       "bot": {
         "q": "Who am I playing against?",
-        "a": "A computer opponent, at Easy, Medium or Hard. The bot plays by exactly the same rules you do and only sees what you would see of your board — it cannot look at your ship positions."
+        "a": "Whoever you choose. The bot plays at Easy, Medium or Hard, follows exactly the same rules you do, and only sees what you would see of your board — it cannot look at your ship positions. You can also play another person online. Games against the bot are never rated."
       },
       "friend": {
         "q": "Can I play against a friend?",
-        "a": "Not yet. At the moment SeaDuel is a single-player game against the bot. Playing another person is planned but not built."
+        "a": "Yes. Create a private room and share the code or the link — neither of you needs an account. If you would rather play a stranger, Quick Match pairs you with whoever is waiting."
       },
       "mobile": {
         "q": "Does it work on my phone?",
@@ -228,11 +228,11 @@
       },
       "rating": {
         "q": "Is there a rating or a leaderboard?",
-        "a": "Not yet. Games against the bot are practice only and are not scored or ranked."
+        "a": "Yes. Rated games are quick matches between two registered players, and your rating moves after every one. Games against the bot, in a private room, or played as a guest are never rated. You appear on the leaderboard once you have played {games} rated matches, your rating has settled below a deviation of {rd}, and you have finished a rated match in the last {days} days."
       },
       "data": {
         "q": "What do you store about me?",
-        "a": "Because there are no accounts, there is no profile to create or delete. Your browser remembers two things locally: the language you chose and whether sound is muted. Clearing your browser data removes both."
+        "a": "Without an account: your browser remembers your language and whether sound is muted, and the server creates a temporary guest identity so that online games work. With an account: your email, your password (scrambled, never readable), your display name, your rating and your finished games. No adverts and no third-party trackers. Deleting an account is not something you can do yourself yet."
       }
     },
     "cta": "Play against the bot",

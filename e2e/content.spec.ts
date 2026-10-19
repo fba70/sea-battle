@@ -100,7 +100,7 @@ test('FAQ accordion expands and collapses by click', { tag: '@core' }, async ({ 
 test('FAQ accordion is operable by keyboard', { tag: '@core' }, async ({ page }) => {
   await page.goto('/en/faq');
 
-  const trigger = page.getByRole('button', { name: 'Do I need to register?' });
+  const trigger = page.getByRole('button', { name: 'Do I need an account?' });
   await trigger.focus();
   await page.keyboard.press('Enter');
 
@@ -110,14 +110,29 @@ test('FAQ accordion is operable by keyboard', { tag: '@core' }, async ({ page })
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('FAQ answers do not promise unbuilt features', async ({ page }) => {
+test('FAQ answers describe what the game actually does now', async ({ page }) => {
+  /**
+   * These answers went stale once accounts, online play and the leaderboard
+   * shipped — they still told people none of it existed. The point of the test is
+   * that the FAQ keeps up with the build, so it asserts the current truth rather
+   * than the absence of features.
+   */
   await page.goto('/en/faq');
 
   await page.getByRole('button', { name: 'Can I play against a friend?' }).click();
-  await expect(page.getByText('Not yet')).toBeVisible();
+  await expect(page.getByText(/create a private room/i)).toBeVisible();
 
   await page.getByRole('button', { name: 'Is there a rating or a leaderboard?' }).click();
-  await expect(page.getByText('not scored or ranked')).toBeVisible();
+  // The thresholds come from the rating policy, not from the translation.
+  await expect(page.getByText(/10 rated matches/)).toBeVisible();
+  await expect(page.getByText(/deviation of 150/)).toBeVisible();
+
+  await page.getByRole('button', { name: 'Do I need an account?' }).click();
+  await expect(page.getByText(/An account is optional/i)).toBeVisible();
+
+  // Nothing left claiming the game has none of this.
+  const body = await page.getByRole('main').innerText();
+  expect(body).not.toMatch(/there is no sign-up at all|single-player game against the bot/i);
 });
 
 test('content is fully translated in German', async ({ page }) => {
@@ -132,9 +147,12 @@ test('content is fully translated in German', async ({ page }) => {
   await expect(page.getByText('keine Werbung')).toBeVisible();
 });
 
-test('untranslated locales fall back to English content', async ({ page }) => {
+test('the rules read in the page’s own language', async ({ page }) => {
+  // Was a fallback test while French was a stub; French is complete now, so the
+  // thing worth checking is that the rules are genuinely in French.
   await page.goto('/fr/how-to-play');
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'fr');
-  await expect(page.getByRole('heading', { level: 1, name: 'How to play' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Comment jouer' })).toBeVisible();
+  await expect(page.getByRole('main')).toContainText('grille fait 10 x 10');
 });

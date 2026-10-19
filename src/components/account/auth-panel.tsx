@@ -1,10 +1,11 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { hasLocale, useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
+import { locales, type Locale } from '@/i18n/routing';
 import {
   checkDisplayName,
   suggestDisplayName,
@@ -48,8 +49,26 @@ function problemKey(code: string | undefined, message: string | undefined): stri
   return 'unknown';
 }
 
+/** The language this account last chose, if it has one. */
+async function storedLocale(): Promise<Locale | null> {
+  try {
+    const response = await fetch('/api/account/locale');
+    if (!response.ok) {
+      return null;
+    }
+    const body = (await response.json()) as { locale?: string | null };
+    return body.locale !== undefined && body.locale !== null && hasLocale(locales, body.locale)
+      ? body.locale
+      : null;
+  } catch {
+    // Not knowing the preference is not a reason to fail a sign-in.
+    return null;
+  }
+}
+
 export function AuthPanel() {
   const t = useTranslations('account');
+  const locale = useLocale();
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>('signIn');
@@ -86,7 +105,18 @@ export function AuthPanel() {
       // The guest identity this browser was holding is gone — claimed on sign-up,
       // discarded on sign-in. Either way the memoised copy must not be reused.
       resetGuestSession();
-      router.push('/play');
+
+      /**
+       * Spec §7.14: a registered player's language follows them between devices,
+       * so signing in restores what the account remembers. Only on sign-in —
+       * registering happens in the language the person is already reading.
+       */
+      const preferred = signUp ? null : await storedLocale();
+      if (preferred !== null && preferred !== locale) {
+        router.replace('/play', { locale: preferred });
+      } else {
+        router.push('/play');
+      }
       router.refresh();
     } catch {
       setError('unknown');

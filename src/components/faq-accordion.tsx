@@ -3,6 +3,12 @@
 import { useTranslations } from 'next-intl';
 
 import {
+  LEADERBOARD_INACTIVITY_DAYS,
+  LEADERBOARD_MAX_RD,
+  LEADERBOARD_MIN_RATED_GAMES,
+} from '@/lib/rating/policy';
+
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -37,7 +43,14 @@ export function FaqAccordion() {
             {t(`items.${key}.q`)}
           </AccordionTrigger>
           <AccordionContent className="text-sm leading-relaxed text-pretty text-muted-foreground">
-            {t(`items.${key}.a`)}
+            {t(`items.${key}.a`, {
+              // The leaderboard answer quotes the real thresholds, so the copy
+              // cannot drift from the rule the ranking actually applies. Values
+              // an answer does not use are simply ignored.
+              games: LEADERBOARD_MIN_RATED_GAMES,
+              rd: LEADERBOARD_MAX_RD,
+              days: LEADERBOARD_INACTIVITY_DAYS,
+            })}
           </AccordionContent>
         </AccordionItem>
       ))}
