@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getFormatter, getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { SignOutButton } from '@/components/account/sign-out-button';
 import { MatchHistory } from '@/components/leaderboard/match-history';
 import { PlayerAvatar } from '@/components/player-avatar';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 import { gamesUntilRanked, winRate } from '@/lib/leaderboard/leaderboard';
@@ -127,9 +128,14 @@ export default async function PlayerProfilePage({ params }: { params: Promise<Pr
             </div>
           </div>
 
-          <Button asChild variant="outline" className="shrink-0">
-            <Link href="/leaderboard">{t('backToBoard')}</Link>
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="outline">
+              <Link href="/leaderboard">{t('backToBoard')}</Link>
+            </Button>
+            {/* Only on your own profile: a sign-out button on someone else's
+                would be, at best, baffling. */}
+            {isOwner ? <SignOutButton className={buttonVariants({ variant: 'ghost' })} /> : null}
+          </div>
         </header>
 
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">

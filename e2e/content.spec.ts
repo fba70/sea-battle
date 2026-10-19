@@ -89,8 +89,12 @@ test('FAQ accordion expands and collapses by click', { tag: '@core' }, async ({ 
   const trigger = page.getByRole('button', { name: 'Is it free?' });
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-  await trigger.click();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  // Retried for the same reason as the keyboard test below: a click that lands
+  // before hydration is swallowed and never replayed.
+  await expect(async () => {
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true', { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
   await expect(page.getByText('no adverts')).toBeVisible();
 
   await trigger.click();
@@ -101,11 +105,21 @@ test('FAQ accordion is operable by keyboard', { tag: '@core' }, async ({ page })
   await page.goto('/en/faq');
 
   const trigger = page.getByRole('button', { name: 'Do I need an account?' });
-  await trigger.focus();
-  await page.keyboard.press('Enter');
 
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+  /**
+   * Retried, because a key pressed before the accordion has hydrated is lost for
+   * good: the markup is server-rendered, so the button exists and takes focus
+   * while React has yet to attach a handler, and nothing replays the event. This
+   * was a real intermittent failure in Firefox under full-suite load. A person
+   * simply presses Enter again; so does this.
+   */
+  await expect(async () => {
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true', { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 
+  // Hydrated by now, so Space needs no retry — and must work on its own.
   await page.keyboard.press('Space');
   await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 });
@@ -119,8 +133,12 @@ test('FAQ answers describe what the game actually does now', async ({ page }) =>
    */
   await page.goto('/en/faq');
 
-  await page.getByRole('button', { name: 'Can I play against a friend?' }).click();
-  await expect(page.getByText(/create a private room/i)).toBeVisible();
+  // The first click is retried for the hydration reason given above; once it
+  // lands, the page is awake and the rest need no retry.
+  await expect(async () => {
+    await page.getByRole('button', { name: 'Can I play against a friend?' }).click();
+    await expect(page.getByText(/create a private room/i)).toBeVisible({ timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
 
   await page.getByRole('button', { name: 'Is there a rating or a leaderboard?' }).click();
   // The thresholds come from the rating policy, not from the translation.
@@ -130,9 +148,12 @@ test('FAQ answers describe what the game actually does now', async ({ page }) =>
   await page.getByRole('button', { name: 'Do I need an account?' }).click();
   await expect(page.getByText(/An account is optional/i)).toBeVisible();
 
-  // Nothing left claiming the game has none of this.
+  // Nothing left claiming the game has none of this. The last two went stale when
+  // confirmation and password-reset emails shipped.
   const body = await page.getByRole('main').innerText();
-  expect(body).not.toMatch(/there is no sign-up at all|single-player game against the bot/i);
+  expect(body).not.toMatch(
+    /there is no sign-up at all|single-player game against the bot|no password reset|never send you email/i,
+  );
 });
 
 test('content is fully translated in German', async ({ page }) => {

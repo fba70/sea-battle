@@ -208,7 +208,7 @@
     "items": {
       "registration": {
         "q": "Brauche ich ein Konto?",
-        "a": "Nein. Seite öffnen und spielen — gegen den Bot oder gegen eine andere Person. Ein Konto ist freiwillig: Es behält deine Wertung, deinen Ranglistenplatz und deine beendeten Partien. Nötig sind nur E-Mail und Passwort, und wir schreiben dir nie. Ein Passwort-Zurücksetzen gibt es noch nicht — bewahre es also gut auf."
+        "a": "Nein. Seite öffnen und spielen — gegen den Bot oder gegen eine andere Person. Ein Konto ist freiwillig: Es behält deine Wertung, deinen Ranglistenplatz und deine beendeten Partien. Nötig sind nur E-Mail und Passwort; anmelden kannst du dich danach mit beidem — E-Mail oder Benutzername. Wir schreiben dir nur, um deine Adresse zu bestätigen oder ein vergessenes Passwort zurückzusetzen."
       },
       "free": {
         "q": "Ist es kostenlos?",
@@ -467,13 +467,14 @@
   },
   "account": {
     "title": "Dein Konto",
-    "lead": "Behalte deine Wertung, deinen Partienverlauf und deinen Ranglistenplatz. Nur E-Mail und Passwort — und keine Post von uns.",
+    "lead": "Behalte deine Wertung, deinen Partienverlauf und deinen Ranglistenplatz. Melde dich mit deiner E-Mail-Adresse oder deinem Benutzernamen an — Post bekommst du von uns nur zu deinem Konto.",
     "signIn": "Anmelden",
     "signOut": "Abmelden",
     "createAccount": "Konto erstellen",
     "displayName": "Anzeigename",
     "displayNameHint": "{min}–{max} Zeichen: Buchstaben, Ziffern und Unterstriche. Diesen Namen sehen andere.",
     "email": "E-Mail",
+    "emailOrUsername": "E-Mail oder Benutzername",
     "password": "Passwort",
     "passwordHint": "Mindestens {min} Zeichen.",
     "working": "Einen Moment…",
@@ -481,7 +482,7 @@
     "signUpNote": "Was du als Gast gespielt hast, kommt mit.",
     "errors": {
       "emailTaken": "Mit dieser E-Mail gibt es bereits ein Konto. Melde dich stattdessen an.",
-      "badCredentials": "E-Mail und Passwort passen zu keinem Konto.",
+      "badCredentials": "Diese Angaben passen zu keinem Konto.",
       "passwordTooShort": "Dieses Passwort ist zu kurz.",
       "unknown": "Etwas ist schiefgelaufen. Versuche es erneut.",
       "name": {
@@ -495,6 +496,36 @@
     "upsell": {
       "body": "Du spielst als Gast — diese Partie wurde nicht gewertet und wird nicht gespeichert.",
       "cta": "Konto erstellen und behalten"
+    },
+    "forgot": "Passwort vergessen?",
+    "forgotTitle": "Passwort zurücksetzen",
+    "forgotLead": "Gib die Adresse ein, mit der du dich registriert hast, dann schicken wir dir einen Link.",
+    "forgotSubmit": "Link senden",
+    "forgotSent": "Falls es zu dieser Adresse ein Konto gibt, ist ein Link unterwegs. Er funktioniert einmal und läuft innerhalb einer Stunde ab.",
+    "backToSignIn": "Zurück zur Anmeldung",
+    "resetTitle": "Neues Passwort wählen",
+    "resetLead": "Nimm etwas, das du nirgendwo sonst verwendest.",
+    "resetSubmit": "Neues Passwort speichern",
+    "resetDone": "Passwort geändert. Du kannst dich jetzt damit anmelden.",
+    "resetInvalid": "Dieser Link ist abgelaufen oder wurde bereits verwendet. Fordere einen neuen an.",
+    "verifiedTitle": "E-Mail bestätigt",
+    "verifiedLead": "Danke — deine Adresse ist bestätigt. Mehr ist nicht zu tun.",
+    "verifyFailedTitle": "Dieser Link hat nicht funktioniert",
+    "verifyFailedLead": "Er ist vermutlich abgelaufen oder wurde schon verwendet. Melde dich an, dann schicken wir einen neuen.",
+    "continue": "Weiterspielen"
+  },
+  "email": {
+    "verify": {
+      "subject": "Bestätige deine E-Mail-Adresse",
+      "body": "Willkommen bei SeaDuel. Bestätige diese Adresse, um dein Konto fertig einzurichten.",
+      "action": "E-Mail bestätigen",
+      "ignore": "Wenn du kein SeaDuel-Konto erstellt hast, kannst du diese Nachricht ignorieren."
+    },
+    "reset": {
+      "subject": "Passwort zurücksetzen",
+      "body": "Jemand hat für dieses SeaDuel-Konto ein neues Passwort angefordert. Der folgende Link funktioniert einmal und läuft in {minutes} Minuten ab.",
+      "action": "Neues Passwort wählen",
+      "ignore": "Warst du das nicht, hat sich nichts geändert und du kannst diese Nachricht ignorieren."
     }
   }
 }

@@ -208,7 +208,7 @@
     "items": {
       "registration": {
         "q": "Ai-je besoin d'un compte ?",
-        "a": "Non. Ouvrez la page et jouez : contre le bot ou contre quelqu'un d'autre. Le compte est facultatif et sert à conserver votre score, votre place au classement et vos parties terminées. Il ne demande qu'un e-mail et un mot de passe, et nous ne vous écrirons jamais. La réinitialisation du mot de passe n'existe pas encore : gardez-le en lieu sûr."
+        "a": "Non. Ouvrez la page et jouez : contre le bot ou contre quelqu'un d'autre. Le compte est facultatif et sert à conserver votre score, votre place au classement et vos parties terminées. Il ne demande qu'un e-mail et un mot de passe, et vous pouvez ensuite vous connecter avec votre e-mail ou votre nom d'utilisateur. Nous ne vous écrivons que pour confirmer votre adresse ou réinitialiser un mot de passe oublié."
       },
       "free": {
         "q": "Est-ce gratuit ?",
@@ -467,13 +467,14 @@
   },
   "account": {
     "title": "Votre compte",
-    "lead": "Conservez votre score, votre historique de parties et votre place au classement. Un e-mail et un mot de passe : rien d'autre, et aucun courrier de notre part.",
+    "lead": "Conservez votre score, votre historique de parties et votre place au classement. Connectez-vous avec votre e-mail ou votre nom d'utilisateur : nous ne vous écrivons qu'au sujet de votre compte.",
     "signIn": "Se connecter",
     "signOut": "Se déconnecter",
     "createAccount": "Créer un compte",
     "displayName": "Nom affiché",
     "displayNameHint": "De {min} à {max} caractères : lettres, chiffres et tirets bas. C'est le nom que voient les autres.",
     "email": "E-mail",
+    "emailOrUsername": "E-mail ou nom d'utilisateur",
     "password": "Mot de passe",
     "passwordHint": "Au moins {min} caractères.",
     "working": "Un instant…",
@@ -481,7 +482,7 @@
     "signUpNote": "Tout ce que vous avez joué en invité vous suit.",
     "errors": {
       "emailTaken": "Un compte existe déjà avec cet e-mail. Essayez plutôt de vous connecter.",
-      "badCredentials": "Cet e-mail et ce mot de passe ne correspondent à aucun compte.",
+      "badCredentials": "Ces informations ne correspondent à aucun compte.",
       "passwordTooShort": "Ce mot de passe est trop court.",
       "unknown": "Quelque chose s'est mal passé. Réessayez.",
       "name": {
@@ -495,6 +496,36 @@
     "upsell": {
       "body": "Vous jouez en invité : cette partie n'a pas été classée et ne sera pas conservée.",
       "cta": "Créez un compte pour la conserver"
+    },
+    "forgot": "Mot de passe oublié ?",
+    "forgotTitle": "Réinitialiser votre mot de passe",
+    "forgotLead": "Indiquez l'adresse avec laquelle vous vous êtes inscrit et nous vous enverrons un lien.",
+    "forgotSubmit": "Envoyer le lien",
+    "forgotSent": "Si cette adresse correspond à un compte, un lien est en route. Il ne fonctionne qu'une fois et expire dans l'heure.",
+    "backToSignIn": "Retour à la connexion",
+    "resetTitle": "Choisissez un nouveau mot de passe",
+    "resetLead": "Choisissez-en un que vous n'utilisez nulle part ailleurs.",
+    "resetSubmit": "Enregistrer le nouveau mot de passe",
+    "resetDone": "Mot de passe modifié. Vous pouvez vous connecter avec.",
+    "resetInvalid": "Ce lien a expiré ou a déjà été utilisé. Demandez-en un nouveau.",
+    "verifiedTitle": "Adresse confirmée",
+    "verifiedLead": "Merci : votre adresse est confirmée. Il n’y a rien d’autre à faire.",
+    "verifyFailedTitle": "Ce lien n'a pas fonctionné",
+    "verifyFailedLead": "Il a sans doute expiré ou déjà été utilisé. Connectez-vous et nous vous en enverrons un autre.",
+    "continue": "Continuer à jouer"
+  },
+  "email": {
+    "verify": {
+      "subject": "Confirmez votre adresse e-mail",
+      "body": "Bienvenue sur SeaDuel. Confirmez cette adresse pour terminer la création de votre compte.",
+      "action": "Confirmer mon adresse",
+      "ignore": "Si vous n'avez pas créé de compte SeaDuel, vous pouvez ignorer ce message."
+    },
+    "reset": {
+      "subject": "Réinitialiser votre mot de passe",
+      "body": "Quelqu'un a demandé à réinitialiser le mot de passe de ce compte SeaDuel. Le lien ci-dessous ne fonctionne qu'une fois et expire dans {minutes} minutes.",
+      "action": "Choisir un nouveau mot de passe",
+      "ignore": "Si ce n'était pas vous, rien n'a changé et vous pouvez ignorer ce message."
     }
   }
 }

@@ -8,7 +8,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 const isTaken = vi.fn(async () => false);
 
 vi.mock('@/lib/account/name-registry', () => ({
-  createDisplayNameRegistry: () => ({ isTaken }),
+  // emailFor belongs to signing in, which this route never does.
+  createDisplayNameRegistry: () => ({ isTaken, emailFor: async () => null }),
 }));
 
 async function ask(name: string): Promise<{ status: number; body: Record<string, unknown> }> {

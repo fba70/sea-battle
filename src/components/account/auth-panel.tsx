@@ -3,6 +3,7 @@
 import { hasLocale, useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState, type FormEvent } from 'react';
 
+import { ForgotPassword } from '@/components/account/forgot-password';
 import { Button } from '@/components/ui/button';
 import { useRouter } from '@/i18n/navigation';
 import { locales, type Locale } from '@/i18n/routing';
@@ -27,7 +28,7 @@ import { resetGuestSession } from '@/lib/guest-session';
  * anonymous plugin links the two and the server moves the data across. Nothing here
  * has to ask for it, and nothing here could be trusted to.
  */
-type Mode = 'signIn' | 'signUp';
+type Mode = 'signIn' | 'signUp' | 'forgot';
 
 /** Maps a better-auth failure onto something a person can act on. */
 function problemKey(code: string | undefined, message: string | undefined): string {
@@ -72,7 +73,10 @@ export function AuthPanel() {
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>('signIn');
-  const [email, setEmail] = useState('');
+  const signUp = mode === 'signUp';
+  // "Email or username" when signing in, an address when registering: one field
+  // either way, because the two can never be confused (a display name has no "@").
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -94,8 +98,9 @@ export function AuthPanel() {
     try {
       const result =
         mode === 'signUp'
-          ? await authClient.signUp.email({ email, password, name: name.trim() })
-          : await authClient.signIn.email({ email, password });
+          ? await authClient.signUp.email({ email: identifier, password, name: name.trim() })
+          : // Resolved to an address on the server; see the sign-in hook in auth.ts.
+            await authClient.signIn.email({ email: identifier, password });
 
       if (result.error) {
         setError(problemKey(result.error.code, result.error.message));
@@ -125,8 +130,6 @@ export function AuthPanel() {
     }
   }
 
-  const signUp = mode === 'signUp';
-
   return (
     <section className="w-full rounded-xl border border-border bg-card px-6 py-8 sm:px-8">
       <div
@@ -139,7 +142,7 @@ export function AuthPanel() {
             key={value}
             type="button"
             role="tab"
-            aria-selected={mode === value}
+            aria-selected={mode === value || (value === 'signIn' && mode === 'forgot')}
             onClick={() => {
               setMode(value);
               setError(null);
@@ -151,7 +154,7 @@ export function AuthPanel() {
               }
             }}
             className={`rounded-md px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-              mode === value
+              mode === value || (value === 'signIn' && mode === 'forgot')
                 ? 'bg-background text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
@@ -161,86 +164,104 @@ export function AuthPanel() {
         ))}
       </div>
 
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        {signUp ? (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="display-name" className="text-sm font-medium">
-              {t('displayName')}
-            </label>
-            <input
-              id="display-name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              required
-              minLength={DISPLAY_NAME_MIN_LENGTH}
-              maxLength={DISPLAY_NAME_MAX_LENGTH}
-              autoComplete="username"
-              aria-describedby="display-name-hint"
-              aria-invalid={nameProblem !== null}
-              className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-            />
-            <p id="display-name-hint" className="text-xs text-muted-foreground">
-              {nameProblem === null
-                ? t('displayNameHint', {
-                    min: DISPLAY_NAME_MIN_LENGTH,
-                    max: DISPLAY_NAME_MAX_LENGTH,
-                  })
-                : t(`errors.name.${nameProblem}`)}
-            </p>
-          </div>
-        ) : null}
+      {mode === 'forgot' ? (
+        <ForgotPassword onBack={() => setMode('signIn')} />
+      ) : (
+        <>
+          <form onSubmit={submit} className="flex flex-col gap-4">
+            {signUp ? (
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="display-name" className="text-sm font-medium">
+                  {t('displayName')}
+                </label>
+                <input
+                  id="display-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  minLength={DISPLAY_NAME_MIN_LENGTH}
+                  maxLength={DISPLAY_NAME_MAX_LENGTH}
+                  autoComplete="username"
+                  aria-describedby="display-name-hint"
+                  aria-invalid={nameProblem !== null}
+                  className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                />
+                <p id="display-name-hint" className="text-xs text-muted-foreground">
+                  {nameProblem === null
+                    ? t('displayNameHint', {
+                        min: DISPLAY_NAME_MIN_LENGTH,
+                        max: DISPLAY_NAME_MAX_LENGTH,
+                      })
+                    : t(`errors.name.${nameProblem}`)}
+                </p>
+              </div>
+            ) : null}
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="email" className="text-sm font-medium">
-            {t('email')}
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            autoComplete="email"
-            className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          />
-        </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-medium">
+                {t(signUp ? 'email' : 'emailOrUsername')}
+              </label>
+              <input
+                id="email"
+                // Not type="email" when signing in: the browser's own validation
+                // would reject a perfectly good username before it was submitted.
+                type={signUp ? 'email' : 'text'}
+                value={identifier}
+                onChange={(event) => setIdentifier(event.target.value)}
+                required
+                autoComplete={signUp ? 'email' : 'username'}
+                className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              />
+            </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="password" className="text-sm font-medium">
-            {t('password')}
-          </label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete={signUp ? 'new-password' : 'current-password'}
-            aria-describedby={signUp ? 'password-hint' : undefined}
-            className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          />
-          {signUp ? (
-            <p id="password-hint" className="text-xs text-muted-foreground">
-              {t('passwordHint', { min: MIN_PASSWORD_LENGTH })}
-            </p>
-          ) : null}
-        </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-medium">
+                {t('password')}
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                minLength={MIN_PASSWORD_LENGTH}
+                autoComplete={signUp ? 'new-password' : 'current-password'}
+                aria-describedby={signUp ? 'password-hint' : undefined}
+                className="rounded-md border border-border bg-background px-3 py-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              />
+              {signUp ? (
+                <p id="password-hint" className="text-xs text-muted-foreground">
+                  {t('passwordHint', { min: MIN_PASSWORD_LENGTH })}
+                </p>
+              ) : null}
+            </div>
 
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {t(`errors.${error}`)}
+            {error ? (
+              <p role="alert" className="text-sm text-destructive">
+                {t(`errors.${error}`)}
+              </p>
+            ) : null}
+
+            <Button type="submit" size="lg" disabled={busy || nameProblem !== null}>
+              {busy ? t('working') : t(signUp ? 'createAccount' : 'signIn')}
+            </Button>
+          </form>
+
+          {signUp ? null : (
+            <button
+              type="button"
+              onClick={() => setMode('forgot')}
+              className="mt-4 rounded-sm text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            >
+              {t('forgot')}
+            </button>
+          )}
+
+          <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
+            {signUp ? t('signUpNote') : t('signInNote')}
           </p>
-        ) : null}
-
-        <Button type="submit" size="lg" disabled={busy || nameProblem !== null}>
-          {busy ? t('working') : t(signUp ? 'createAccount' : 'signIn')}
-        </Button>
-      </form>
-
-      <p className="mt-5 text-xs leading-relaxed text-muted-foreground">
-        {signUp ? t('signUpNote') : t('signInNote')}
-      </p>
+        </>
+      )}
     </section>
   );
 }

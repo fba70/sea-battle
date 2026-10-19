@@ -1,11 +1,10 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
-import { Link, useRouter } from '@/i18n/navigation';
-import { authClient, useSession } from '@/lib/auth-client';
-import { resetGuestSession } from '@/lib/guest-session';
+import { SignOutButton } from '@/components/account/sign-out-button';
+import { Link } from '@/i18n/navigation';
+import { useSession } from '@/lib/auth-client';
 
 /**
  * Who you are, in the site header (spec §7.5).
@@ -21,25 +20,10 @@ import { resetGuestSession } from '@/lib/guest-session';
  */
 export function SessionControl() {
   const t = useTranslations('account');
-  const router = useRouter();
   const { data, isPending } = useSession();
-  const [busy, setBusy] = useState(false);
 
   const user = data?.user;
   const signedIn = user !== undefined && user.isAnonymous !== true;
-
-  async function signOut(): Promise<void> {
-    setBusy(true);
-    try {
-      await authClient.signOut();
-      // The next page view mints a fresh guest; without this the memoised identity
-      // from the signed-in session would be handed out again.
-      resetGuestSession();
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (isPending) {
     // Holds the row height steady while the session resolves.
@@ -65,14 +49,7 @@ export function SessionControl() {
       >
         {user.name}
       </Link>
-      <button
-        type="button"
-        onClick={() => void signOut()}
-        disabled={busy}
-        className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50"
-      >
-        {t('signOut')}
-      </button>
+      <SignOutButton className="rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50" />
     </span>
   );
 }

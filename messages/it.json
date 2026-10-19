@@ -208,7 +208,7 @@
     "items": {
       "registration": {
         "q": "Serve un account?",
-        "a": "No. Apri la pagina e gioca: contro il bot o contro un'altra persona. L'account è facoltativo e serve a conservare il punteggio, il posto in classifica e le partite concluse. Bastano un'email e una password, e non ti scriveremo mai. Non esiste ancora il recupero della password, quindi conservala in un posto sicuro."
+        "a": "No. Apri la pagina e gioca: contro il bot o contro un'altra persona. L'account è facoltativo e serve a conservare il punteggio, il posto in classifica e le partite concluse. Bastano un'email e una password, e poi puoi accedere con l'email o con il nome utente. Ti scriviamo solo per confermare il tuo indirizzo o per reimpostare una password dimenticata."
       },
       "free": {
         "q": "È gratis?",
@@ -467,13 +467,14 @@
   },
   "account": {
     "title": "Il tuo account",
-    "lead": "Conserva il punteggio, la cronologia delle partite e il posto in classifica. Email e password: nient'altro, e non ti scriveremo.",
+    "lead": "Conserva il punteggio, la cronologia delle partite e il posto in classifica. Accedi con l'email o con il nome utente: ti scriviamo solo per cose che riguardano il tuo account.",
     "signIn": "Accedi",
     "signOut": "Esci",
     "createAccount": "Crea un account",
     "displayName": "Nome visualizzato",
     "displayNameHint": "Da {min} a {max} caratteri: lettere, numeri e trattini bassi. È il nome che vedono gli altri.",
     "email": "Email",
+    "emailOrUsername": "Email o nome utente",
     "password": "Password",
     "passwordHint": "Almeno {min} caratteri.",
     "working": "Un attimo…",
@@ -481,7 +482,7 @@
     "signUpNote": "Tutto quello che hai giocato da ospite viene con te.",
     "errors": {
       "emailTaken": "Esiste già un account con quell'email. Prova ad accedere.",
-      "badCredentials": "Email e password non corrispondono a nessun account.",
+      "badCredentials": "Questi dati non corrispondono a nessun account.",
       "passwordTooShort": "La password è troppo corta.",
       "unknown": "Qualcosa è andato storto. Riprova.",
       "name": {
@@ -495,6 +496,36 @@
     "upsell": {
       "body": "Stai giocando come ospite, quindi questa partita non è stata valutata e non verrà conservata.",
       "cta": "Crea un account per conservarla"
+    },
+    "forgot": "Hai dimenticato la password?",
+    "forgotTitle": "Reimposta la password",
+    "forgotLead": "Scrivi l'indirizzo con cui ti sei registrato e ti manderemo un link.",
+    "forgotSubmit": "Invia il link",
+    "forgotSent": "Se a quell'indirizzo corrisponde un account, il link è in arrivo. Funziona una sola volta e scade entro un'ora.",
+    "backToSignIn": "Torna all'accesso",
+    "resetTitle": "Scegli una nuova password",
+    "resetLead": "Scegli qualcosa che non usi altrove.",
+    "resetSubmit": "Salva la nuova password",
+    "resetDone": "Password cambiata. Ora puoi accedere con quella.",
+    "resetInvalid": "Quel link è scaduto o è già stato usato. Richiedine uno nuovo.",
+    "verifiedTitle": "Email confermata",
+    "verifiedLead": "Grazie: il tuo indirizzo è confermato. Non devi fare altro.",
+    "verifyFailedTitle": "Quel link non ha funzionato",
+    "verifyFailedLead": "Probabilmente è scaduto o è già stato usato. Accedi e te ne manderemo un altro.",
+    "continue": "Continua a giocare"
+  },
+  "email": {
+    "verify": {
+      "subject": "Conferma il tuo indirizzo email",
+      "body": "Benvenuto su SeaDuel. Conferma questo indirizzo per completare la configurazione dell'account.",
+      "action": "Conferma la mia email",
+      "ignore": "Se non hai creato un account SeaDuel, puoi ignorare questo messaggio."
+    },
+    "reset": {
+      "subject": "Reimposta la password",
+      "body": "Qualcuno ha chiesto di reimpostare la password di questo account SeaDuel. Il link qui sotto funziona una sola volta e scade fra {minutes} minuti.",
+      "action": "Scegli una nuova password",
+      "ignore": "Se non sei stato tu, non è cambiato nulla e puoi ignorare questo messaggio."
     }
   }
 }

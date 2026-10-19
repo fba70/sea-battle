@@ -208,7 +208,7 @@
     "items": {
       "registration": {
         "q": "¿Necesito una cuenta?",
-        "a": "No. Abre la página y juega: contra el bot o contra otra persona. La cuenta es opcional y sirve para conservar tu puntuación, tu puesto en la clasificación y tus partidas terminadas. Solo hacen falta un correo y una contraseña, y nunca te escribiremos. Todavía no se puede restablecer la contraseña, así que guárdala en un sitio seguro."
+        "a": "No. Abre la página y juega: contra el bot o contra otra persona. La cuenta es opcional y sirve para conservar tu puntuación, tu puesto en la clasificación y tus partidas terminadas. Solo hacen falta un correo y una contraseña, y después puedes entrar con tu correo o con tu nombre de usuario. Solo te escribimos para confirmar tu dirección o para restablecer una contraseña olvidada."
       },
       "free": {
         "q": "¿Es gratis?",
@@ -467,13 +467,14 @@
   },
   "account": {
     "title": "Tu cuenta",
-    "lead": "Conserva tu puntuación, tu historial de partidas y tu puesto en la clasificación. Correo y contraseña: nada más, y no te escribiremos.",
+    "lead": "Conserva tu puntuación, tu historial de partidas y tu puesto en la clasificación. Entra con tu correo o con tu nombre de usuario; solo te escribiremos sobre tu cuenta.",
     "signIn": "Iniciar sesión",
     "signOut": "Cerrar sesión",
     "createAccount": "Crear cuenta",
     "displayName": "Nombre visible",
     "displayNameHint": "De {min} a {max} caracteres: letras, números y guiones bajos. Es el nombre que ven los demás.",
     "email": "Correo electrónico",
+    "emailOrUsername": "Correo electrónico o nombre de usuario",
     "password": "Contraseña",
     "passwordHint": "Al menos {min} caracteres.",
     "working": "Un momento…",
@@ -481,7 +482,7 @@
     "signUpNote": "Todo lo que hayas jugado como invitado se conserva.",
     "errors": {
       "emailTaken": "Ya hay una cuenta con ese correo. Prueba a iniciar sesión.",
-      "badCredentials": "Ese correo y esa contraseña no coinciden con ninguna cuenta.",
+      "badCredentials": "Esos datos no coinciden con ninguna cuenta.",
       "passwordTooShort": "Esa contraseña es demasiado corta.",
       "unknown": "Algo ha salido mal. Inténtalo de nuevo.",
       "name": {
@@ -495,6 +496,36 @@
     "upsell": {
       "body": "Juegas como invitado, así que esta partida no ha puntuado y no se guardará.",
       "cta": "Crea una cuenta para conservarla"
+    },
+    "forgot": "¿Has olvidado la contraseña?",
+    "forgotTitle": "Restablecer la contraseña",
+    "forgotLead": "Escribe la dirección con la que te registraste y te enviaremos un enlace.",
+    "forgotSubmit": "Enviar el enlace",
+    "forgotSent": "Si esa dirección tiene cuenta, el enlace ya va de camino. Funciona una sola vez y caduca en menos de una hora.",
+    "backToSignIn": "Volver a iniciar sesión",
+    "resetTitle": "Elige una contraseña nueva",
+    "resetLead": "Elige algo que no uses en ningún otro sitio.",
+    "resetSubmit": "Guardar la nueva contraseña",
+    "resetDone": "Contraseña cambiada. Ya puedes iniciar sesión con ella.",
+    "resetInvalid": "Ese enlace ha caducado o ya se ha usado. Pide uno nuevo.",
+    "verifiedTitle": "Correo confirmado",
+    "verifiedLead": "Gracias: tu dirección está confirmada. No hay nada más que hacer.",
+    "verifyFailedTitle": "Ese enlace no ha funcionado",
+    "verifyFailedLead": "Puede que haya caducado o que ya se haya usado. Inicia sesión y te enviaremos otro.",
+    "continue": "Seguir jugando"
+  },
+  "email": {
+    "verify": {
+      "subject": "Confirma tu correo electrónico",
+      "body": "Te damos la bienvenida a SeaDuel. Confirma esta dirección para terminar de configurar tu cuenta.",
+      "action": "Confirmar mi correo",
+      "ignore": "Si no has creado una cuenta en SeaDuel, puedes ignorar este mensaje."
+    },
+    "reset": {
+      "subject": "Restablecer la contraseña",
+      "body": "Alguien ha pedido restablecer la contraseña de esta cuenta de SeaDuel. El enlace de abajo funciona una sola vez y caduca en {minutes} minutos.",
+      "action": "Elegir una contraseña nueva",
+      "ignore": "Si no has sido tú, no ha cambiado nada y puedes ignorar este mensaje."
     }
   }
 }

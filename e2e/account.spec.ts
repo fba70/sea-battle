@@ -153,6 +153,10 @@ test('the profile still opens after signing out and back in', async ({ page }) =
   await page.getByLabel(/password/i).fill(PASSWORD);
   await page.getByRole('button', { name: /^sign in$/i }).click();
 
+  // Signing in navigates to the play hub. Clicking the header link before that
+  // lands loses the click to the navigation already under way.
+  await expect(page).toHaveURL(/\/en\/play$/, { timeout: 20_000 });
+
   await page.getByRole('link', { name: who.name }).click();
   await expect(page.getByRole('heading', { level: 1, name: who.name })).toBeVisible({
     timeout: 20_000,
@@ -170,4 +174,101 @@ test('German renders the account page without raw keys', async ({ browser }) => 
   expect(body).not.toMatch(/ACCOUNT\.|NAV\./);
 
   await context.close();
+});
+
+test('signing in with the display name works as well as the email @core', async ({ page }) => {
+  const who = unique();
+  await register(page, who);
+  await expect(page.getByRole('link', { name: who.name })).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: /sign out/i }).click();
+  await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible({ timeout: 20_000 });
+
+  // Retried: signing out refreshes the page, and a navigation issued into that
+  // refresh is aborted outright rather than queued.
+  await expect(async () => {
+    await page.goto('/en/account');
+    await expect(page.getByLabel(/email or username/i)).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
+
+  // Upper-cased on purpose: the username matches the way uniqueness does.
+  await page.getByLabel(/email or username/i).fill(who.name.toUpperCase());
+  await page.getByLabel(/password/i).fill(PASSWORD);
+  await page.getByRole('button', { name: /^sign in$/i }).click();
+
+  await expect(page.getByRole('link', { name: who.name })).toBeVisible({ timeout: 20_000 });
+});
+
+test('an unknown username is refused exactly like a wrong password', async ({ page }) => {
+  await page.goto('/en/account');
+  await page.getByLabel(/email or username/i).fill('Nobody_At_All');
+  await page.getByLabel(/password/i).fill(PASSWORD);
+  await page.getByRole('button', { name: /^sign in$/i }).click();
+
+  // Never "no such player": the form must not say which names are registered.
+  await expect(page.getByRole('main').getByRole('alert')).toContainText(/do not match/i, {
+    timeout: 20_000,
+  });
+});
+
+test('your own profile offers a sign-out button; nobody else’s does @core', async ({ browser }) => {
+  const owner = await browser.newContext();
+  const page = await owner.newPage();
+
+  const who = unique();
+  await register(page, who);
+  await page.getByRole('link', { name: who.name }).click();
+  await expect(page).toHaveURL(/\/en\/players\//, { timeout: 20_000 });
+  const profile = page.url();
+
+  // One on the profile itself, one in the header.
+  await expect(page.getByRole('main').getByRole('button', { name: /sign out/i })).toBeVisible();
+
+  // Somebody else's view of the same profile: readable, with nothing to sign out of.
+  const other = await browser.newContext();
+  const visitor = await other.newPage();
+  const them = unique();
+  await register(visitor, them);
+  await visitor.goto(profile);
+
+  await expect(visitor.getByRole('heading', { level: 1, name: who.name })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(visitor.getByRole('main').getByRole('button', { name: /sign out/i })).toBeHidden();
+  await other.close();
+
+  // And it signs you out where it is offered.
+  await page
+    .getByRole('main')
+    .getByRole('button', { name: /sign out/i })
+    .click();
+  await expect(page.getByRole('link', { name: /sign in/i })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole('main').getByRole('button', { name: /sign out/i })).toBeHidden();
+
+  // Spec §7.7: a profile stays public, including to a guest.
+  await expect(page.getByRole('heading', { level: 1, name: who.name })).toBeVisible();
+  await owner.close();
+});
+
+test('a guest can read a public profile @core', async ({ browser }) => {
+  const owner = await browser.newContext();
+  const page = await owner.newPage();
+  const who = unique();
+  await register(page, who);
+  await page.getByRole('link', { name: who.name }).click();
+  await expect(page).toHaveURL(/\/en\/players\//, { timeout: 20_000 });
+  const profile = page.url();
+  await owner.close();
+
+  // A browser that has never signed in to anything.
+  const guest = await browser.newContext();
+  const visitor = await guest.newPage();
+  await visitor.goto(profile);
+
+  await expect(visitor.getByRole('heading', { level: 1, name: who.name })).toBeVisible({
+    timeout: 20_000,
+  });
+  await expect(visitor.getByText('1500')).toBeVisible();
+  // The match list is private (spec §2), the rest of the profile is not.
+  await expect(visitor.getByText(/history is private/i)).toBeVisible();
+  await guest.close();
 });

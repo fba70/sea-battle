@@ -41,12 +41,17 @@ function recordingClaimStore(counts: ClaimCounts = { games: 2, guestExisted: tru
 function freshAuth(claimStore: GuestClaimStore = recordingClaimStore().store) {
   const store: Store = { user: [], session: [], account: [], verification: [] };
 
-  /** The same uniqueness rule as the Postgres index, over the in-memory rows. */
+  /** The same rules as the Postgres index and query, over the in-memory rows. */
+  const registered = () =>
+    (store.user as { name?: string; email?: string; isAnonymous?: boolean }[]).filter(
+      (row) => row.isAnonymous !== true,
+    );
+
   const nameRegistry = {
     isTaken: async (key: string) =>
-      (store.user as { name?: string; isAnonymous?: boolean }[]).some(
-        (row) => row.isAnonymous !== true && (row.name ?? '').toLowerCase() === key,
-      ),
+      registered().some((row) => (row.name ?? '').toLowerCase() === key),
+    emailFor: async (key: string) =>
+      registered().find((row) => (row.name ?? '').toLowerCase() === key)?.email ?? null,
   };
 
   const auth = betterAuth(
@@ -378,5 +383,117 @@ describe('display names (spec §7.5)', () => {
   it('refuses a password one character short', async () => {
     const { auth } = freshAuth();
     await expect(register(auth, 'Rudder', 'rudder@example.com', 'sevench')).rejects.toThrow();
+  });
+});
+
+describe('signing in with an email or a username (spec §7.5)', () => {
+  const PASSWORD_8 = 'eightchr';
+
+  async function register(auth: ReturnType<typeof freshAuth>['auth']) {
+    await auth.api.signUpEmail({
+      body: { email: 'nemo@example.com', password: PASSWORD_8, name: 'Captain_Nemo' },
+    });
+  }
+
+  /** What better-auth answers for credentials that do not match. */
+  async function refusal(attempt: Promise<unknown>) {
+    return attempt.then(
+      () => null,
+      (error: unknown) => {
+        const { status, body } = error as { status?: string; body?: { code?: string } };
+        return { status, code: body?.code };
+      },
+    );
+  }
+
+  it('still signs in with the email address', async () => {
+    const { auth } = freshAuth();
+    await register(auth);
+
+    const result = await auth.api.signInEmail({
+      body: { email: 'nemo@example.com', password: PASSWORD_8 },
+    });
+
+    expect(result.user.name).toBe('Captain_Nemo');
+  });
+
+  it('signs in with the display name instead', async () => {
+    const { auth } = freshAuth();
+    await register(auth);
+
+    const result = await auth.api.signInEmail({
+      body: { email: 'Captain_Nemo', password: PASSWORD_8 },
+    });
+
+    expect(result.user.email).toBe('nemo@example.com');
+  });
+
+  it('matches the display name regardless of case or stray spaces', async () => {
+    const { auth } = freshAuth();
+    await register(auth);
+
+    const result = await auth.api.signInEmail({
+      body: { email: '  cAPTAIN_nEMO ', password: PASSWORD_8 },
+    });
+
+    expect(result.user.email).toBe('nemo@example.com');
+  });
+
+  it('refuses the right password under a username that does not exist', async () => {
+    const { auth } = freshAuth();
+    await register(auth);
+
+    const unknownName = await refusal(
+      auth.api.signInEmail({ body: { email: 'Nobody_At_All', password: PASSWORD_8 } }),
+    );
+    const wrongPassword = await refusal(
+      auth.api.signInEmail({ body: { email: 'nemo@example.com', password: 'wrongpassword' } }),
+    );
+
+    // SECURITY: byte for byte the same answer, so the form cannot be used to find
+    // out which names are registered.
+    expect(unknownName).toEqual(wrongPassword);
+    expect(unknownName?.code).toBe('INVALID_EMAIL_OR_PASSWORD');
+  });
+
+  it('refuses a wrong password given with a real username', async () => {
+    const { auth } = freshAuth();
+    await register(auth);
+
+    const result = await refusal(
+      auth.api.signInEmail({ body: { email: 'Captain_Nemo', password: 'wrongpassword' } }),
+    );
+
+    expect(result?.code).toBe('INVALID_EMAIL_OR_PASSWORD');
+  });
+
+  it('cannot be used to sign in as a guest', async () => {
+    // Every guest is called "Anonymous" and has no credentials; the lookup
+    // deliberately ignores them.
+    const { auth } = freshAuth();
+    await signInAnonymously(auth);
+
+    const result = await refusal(
+      auth.api.signInEmail({ body: { email: 'Anonymous', password: PASSWORD_8 } }),
+    );
+
+    expect(result?.code).toBe('INVALID_EMAIL_OR_PASSWORD');
+  });
+
+  it('still discards the guest when signing in by username', async () => {
+    // The claim rides on the sign-in path, which rewriting the body must not change.
+    const recorder = recordingClaimStore();
+    const { auth } = freshAuth(recorder.store);
+    await register(auth);
+    recorder.calls.length = 0;
+
+    const { response, headers } = await auth.api.signInAnonymous({ returnHeaders: true });
+    const cookie = headers.get('set-cookie');
+    await auth.api.signInEmail({
+      body: { email: 'Captain_Nemo', password: PASSWORD_8 },
+      headers: new Headers({ cookie: cookie ?? '' }),
+    });
+
+    expect(recorder.calls).toEqual([{ kind: 'discard', guestUserId: response?.user?.id }]);
   });
 });
